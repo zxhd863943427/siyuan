@@ -60,7 +60,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           release_name: ${{ steps.release_info.outputs.release_version }}
-          tag_name: ${{ github.ref }}
+          tag_name: 2.9.12
           body: ${{ env.release_body }}
           draft: false
           prerelease: true
