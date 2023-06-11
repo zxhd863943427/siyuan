@@ -51,17 +51,17 @@ export const avRender = (element: Element) => {
                 data.rows.forEach((row: IAVRow) => {
                     tableHTML += `<div class="av__row" data-id="${row.id}"><div class="av__firstcol"><svg><use xlink:href="#iconUncheck"></use></svg></div>`;
                     row.cells.forEach((cell, index) => {
-                        tableHTML += `<div class="av__cell" data-index="${index}" style="width: ${data.columns[index].width || 200}px;background-color: ${cell.bgColor || ""};color: ${cell.color || ""}">${cell.value}</div>`;
+                        tableHTML += `<div class="av__cell" data-index="${index}" style="width: ${data.columns[index].width || 200}px;${cell.bgColor ? `background-color:${cell.bgColor};` : ""}${cell.color ? `color:${cell.color};` : ""}">${cell.renderValue?.content || ""}</div>`;
                     });
                     tableHTML += "<div></div></div>";
                 });
-                const paddingLeft = e.parentElement.style.paddingLeft;
-                const paddingRight = e.parentElement.style.paddingRight;
-                // 10: ::-webkit-scrollbar width
-                e.style.width = (e.parentElement.clientWidth - 10) + "px";
+                const paddingLeft = parseInt(e.parentElement.style.paddingLeft) - 20;
+                const paddingRight = parseInt(e.parentElement.style.paddingRight) - 20
+                // 48: padding for gutter icon
+                e.style.width = (e.parentElement.clientWidth - 48) + "px";
                 e.style.alignSelf = "center";
                 e.firstElementChild.outerHTML = `<div>
-    <div style="padding-left: ${paddingLeft};padding-right: ${paddingRight}">
+    <div style="padding-left: ${paddingLeft}px;padding-right: ${paddingRight}px">
         <div>
             <div>tab1</div>
         </div>
@@ -70,7 +70,7 @@ export const avRender = (element: Element) => {
         </div>
     </div>
     <div class="av__scroll">
-        <div style="padding-left: ${paddingLeft};padding-right: ${paddingRight};float: left;">
+        <div style="padding-left: ${paddingLeft}px;padding-right: ${paddingRight}px;float: left;">
             ${tableHTML}
             <div class="block__icon block__icon--show">
                 <div class="fn__space"></div>
