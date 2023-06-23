@@ -15,7 +15,10 @@ import {webFrame} from "electron";
 /// #endif
 import {Constants} from "../constants";
 import {isBrowser, isWindow} from "../util/functions";
-import {Menu} from "../plugin/API";
+import {Menu} from "../plugin/Menu";
+import {fetchPost} from "../util/fetch";
+import {needSubscribe} from "../util/needSubscribe";
+import * as dayjs from "dayjs";
 
 export const updateEditModeElement = () => {
     const target = document.querySelector("#barReadonly");
@@ -37,7 +40,7 @@ export const initBar = (app: App) => {
     <span class="toolbar__text">${getWorkspaceName()}</span>
     <svg class="toolbar__svg"><use xlink:href="#iconDown"></use></svg>
 </div>
-<div id="barSync" class="toolbar__item b3-tooltips b3-tooltips__se${window.siyuan.config.readonly ? " fn__none" : ""}" aria-label="${window.siyuan.config.sync.stat || (window.siyuan.languages.syncNow + " " + updateHotkeyTip(window.siyuan.config.keymap.general.syncNow.custom))}">
+<div id="barSync" data-position="top" data-type="a" class="toolbar__item${window.siyuan.config.readonly ? " fn__none" : ""}">
     <svg><use xlink:href="#iconCloudSucc"></use></svg>
 </div>
 <button id="barBack" data-menu="true" class="toolbar__item toolbar__item--disabled b3-tooltips b3-tooltips__se" aria-label="${window.siyuan.languages.goBack} ${updateHotkeyTip(window.siyuan.config.keymap.general.goBack.custom)}">
@@ -227,6 +230,36 @@ export const initBar = (app: App) => {
             target = target.parentElement;
         }
     });
+    const barSyncElement = toolbarElement.querySelector("#barSync");
+    barSyncElement.addEventListener("mouseenter", (event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        fetchPost("/api/sync/getSyncInfo", {}, (response) => {
+            let html = "";
+            if (!window.siyuan.config.sync.enabled || (0 === window.siyuan.config.sync.provider && needSubscribe(""))) {
+                html = response.data.stat;
+            } else {
+                html = window.siyuan.languages._kernel[82].replace("%s", dayjs(response.data.synced).format("YYYY-MM-DD HH:mm")) + "<br>";
+                html += "  " + response.data.stat;
+                if (response.data.kernels.length > 0) {
+                    html += "<br>";
+                    html += window.siyuan.languages.currentKernel + "<br>";
+                    html += "  " + response.data.kernel + "/" + window.siyuan.config.system.kernelVersion + " (" + window.siyuan.config.system.os + "/" + window.siyuan.config.system.name + ")<br>";
+                    html += window.siyuan.languages.otherOnlineKernels + "<br>";
+                    response.data.kernels.forEach((item: {
+                        os: string;
+                        ver: string;
+                        hostname: string;
+                        id: string;
+                    }) => {
+                        html += `  ${item.id}/${item.ver} (${item.os}/${item.hostname}) <br>`;
+                    });
+                }
+            }
+            barSyncElement.setAttribute("aria-label", html);
+        });
+    });
+    barSyncElement.setAttribute("aria-label", window.siyuan.config.sync.stat || (window.siyuan.languages.syncNow + " " + updateHotkeyTip(window.siyuan.config.keymap.general.syncNow.custom)));
 };
 
 export const setZoom = (type: "zoomIn" | "zoomOut" | "restore") => {
@@ -274,6 +307,7 @@ const openPlugin = (app: App, target: Element) => {
     app.plugins.forEach((plugin) => {
         // @ts-ignore
         const hasSetting = plugin.setting || plugin.__proto__.hasOwnProperty("openSetting");
+        let hasTopBar = false;
         plugin.topBarIcons.forEach(item => {
             const hasUnpin = window.siyuan.storage[Constants.LOCAL_PLUGINTOPUNPIN].includes(item.id);
             const submenu = [{
@@ -318,7 +352,18 @@ const openPlugin = (app: App, target: Element) => {
             }
             menu.addItem(menuOption);
             hasPlugin = true;
+            hasTopBar = true;
         });
+        if (!hasTopBar && hasSetting) {
+            hasPlugin = true;
+            menu.addItem({
+                icon: "iconSettings",
+                label: plugin.name,
+                click() {
+                    plugin.openSetting();
+                }
+            });
+        }
     });
 
     if (hasPlugin) {

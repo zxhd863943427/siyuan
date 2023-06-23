@@ -19,7 +19,6 @@ package model
 import (
 	"bytes"
 	"fmt"
-	"github.com/sashabaranov/go-openai"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -35,6 +34,8 @@ import (
 	"github.com/Xuanwo/go-locale"
 	"github.com/dustin/go-humanize"
 	"github.com/getsentry/sentry-go"
+	"github.com/sashabaranov/go-openai"
+	"github.com/siyuan-note/eventbus"
 	"github.com/siyuan-note/filelock"
 	"github.com/siyuan-note/logging"
 	"github.com/siyuan-note/siyuan/kernel/conf"
@@ -78,6 +79,7 @@ type AppConf struct {
 	Repo           *conf.Repo       `json:"repo"`           // 数据仓库
 	OpenHelp       bool             `json:"openHelp"`       // 启动后是否需要打开用户指南
 	ShowChangelog  bool             `json:"showChangelog"`  // 是否显示版本更新日志
+	CloudRegion    int              `json:"cloudRegion"`    // 云端区域，0：中国大陆，1：北美
 }
 
 func InitConf() {
@@ -184,6 +186,8 @@ func InitConf() {
 		Conf.FileTree.DocCreateSavePath = strings.TrimSpace(Conf.FileTree.DocCreateSavePath)
 	}
 
+	util.CurrentCloudRegion = Conf.CloudRegion
+
 	if nil == Conf.Tag {
 		Conf.Tag = conf.NewTag()
 	}
@@ -284,6 +288,9 @@ func InitConf() {
 	}
 	Conf.Sync.WebDAV.Endpoint = util.NormalizeEndpoint(Conf.Sync.WebDAV.Endpoint)
 	Conf.Sync.WebDAV.Timeout = util.NormalizeTimeout(Conf.Sync.WebDAV.Timeout)
+	if util.ContainerDocker == util.Container {
+		Conf.Sync.Perception = false
+	}
 
 	if nil == Conf.Api {
 		Conf.Api = conf.NewAPI()
@@ -385,6 +392,9 @@ func InitConf() {
 	}
 
 	util.SetNetworkProxy(Conf.System.NetworkProxy.String())
+
+	go util.InitPandoc()
+	go util.InitTesseract()
 }
 
 func initLang() {
@@ -469,7 +479,7 @@ func Close(force bool, execInstallPkg int) (exitCode int) {
 	if !force {
 		if Conf.Sync.Enabled && 3 != Conf.Sync.Mode &&
 			((IsSubscriber() && conf.ProviderSiYuan == Conf.Sync.Provider) || conf.ProviderSiYuan != Conf.Sync.Provider) {
-			syncData(true, false)
+			syncData(true, false, false)
 			if 0 != ExitSyncSucc {
 				exitCode = 1
 				return
@@ -509,6 +519,7 @@ func Close(force bool, execInstallPkg int) (exitCode int) {
 		time.Sleep(4 * time.Second)
 	}
 	logging.LogInfof("exited kernel")
+	closeSyncWebSocket()
 	util.WebSocketServer.Close()
 	go func() {
 		time.Sleep(500 * time.Millisecond)
@@ -645,6 +656,13 @@ func (conf *AppConf) GetClosedBoxes() (ret []*Box) {
 }
 
 func (conf *AppConf) Language(num int) (ret string) {
+	ret = conf.language(num)
+	subscribeURL := util.GetCloudAccountServer() + "/subscribe/siyuan"
+	ret = strings.ReplaceAll(ret, "${url}", subscribeURL)
+	return
+}
+
+func (conf *AppConf) language(num int) (ret string) {
 	ret = util.Langs[conf.Lang][num]
 	if "" != ret {
 		return
@@ -781,6 +799,7 @@ func clearCorruptedNotebooks() {
 func clearWorkspaceTemp() {
 	os.RemoveAll(filepath.Join(util.TempDir, "bazaar"))
 	os.RemoveAll(filepath.Join(util.TempDir, "export"))
+	os.RemoveAll(filepath.Join(util.TempDir, "convert"))
 	os.RemoveAll(filepath.Join(util.TempDir, "import"))
 	os.RemoveAll(filepath.Join(util.TempDir, "repo"))
 	os.RemoveAll(filepath.Join(util.TempDir, "os"))
@@ -887,4 +906,16 @@ func upgradeUserGuide() {
 
 		index(boxID)
 	}
+}
+
+func init() {
+	subscribeConfEvents()
+}
+
+func subscribeConfEvents() {
+	eventbus.Subscribe(util.EvtConfPandocInitialized, func() {
+		logging.LogInfof("pandoc initialized, set pandoc bin to [%s]", util.PandocBinPath)
+		Conf.Export.PandocBin = util.PandocBinPath
+		Conf.Save()
+	})
 }

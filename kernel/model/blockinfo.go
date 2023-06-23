@@ -309,7 +309,7 @@ func buildBlockBreadcrumb(node *ast.Node, excludeTypes []string) (ret []*BlockPa
 		if add {
 			ret = append([]*BlockPath{{
 				ID:      id,
-				Name:    name,
+				Name:    util.EscapeHTML(name),
 				Type:    parent.Type.String(),
 				SubType: treenode.SubTypeAbbr(parent),
 			}}, ret...)
@@ -330,7 +330,7 @@ func buildBlockBreadcrumb(node *ast.Node, excludeTypes []string) (ret []*BlockPa
 				name = gulu.Str.SubStr(renderBlockText(b, excludeTypes), maxNameLen)
 				ret = append([]*BlockPath{{
 					ID:      b.ID,
-					Name:    name,
+					Name:    util.EscapeHTML(name),
 					Type:    b.Type.String(),
 					SubType: treenode.SubTypeAbbr(b),
 				}}, ret...)

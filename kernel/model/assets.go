@@ -103,7 +103,7 @@ func NetImg2LocalAssets(rootID, originalURL string) (err error) {
 				// `网络图片转换为本地图片` 支持处理 `file://` 本地路径图片 https://github.com/siyuan-note/siyuan/issues/6546
 
 				u := string(dest)[7:]
-				if !gulu.File.IsExist(u) {
+				if !gulu.File.IsExist(u) || gulu.File.IsDir(u) {
 					return ast.WalkSkipChildren
 				}
 
@@ -367,7 +367,7 @@ func uploadAssets2Cloud(sqlAssets []*sql.Asset, bizType string) (err error) {
 			SetCookies(&http.Cookie{Name: "symphony", Value: uploadToken}).
 			SetHeader("meta-type", metaType).
 			SetHeader("biz-type", bizType).
-			Post(util.AliyunServer + "/apis/siyuan/upload?ver=" + util.Ver)
+			Post(util.GetCloudServer() + "/apis/siyuan/upload?ver=" + util.Ver)
 		if nil != reqErr {
 			logging.LogErrorf("upload assets failed: %s", reqErr)
 			return ErrFailedToConnectCloudServer

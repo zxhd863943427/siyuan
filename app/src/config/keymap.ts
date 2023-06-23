@@ -39,7 +39,7 @@ export const keymap = {
             item.commands.forEach(command => {
                 const keyValue = updateHotkeyTip(command.customHotkey);
                 commandHTML += `<label class="b3-list-item b3-list-item--narrow b3-list-item--hide-action">
-    <span class="b3-list-item__text">${item.i18n[command.langKey]}</span>
+    <span class="b3-list-item__text">${command.langText || item.i18n[command.langKey] || command.langKey}</span>
     <span data-type="reset" class="b3-list-item__action b3-tooltips b3-tooltips__w" aria-label="${window.siyuan.languages.reset}">
         <svg><use xlink:href="#iconUndo"></use></svg>
     </span>
@@ -424,36 +424,24 @@ export const keymap = {
         if (isCtrl(event)) {
             keymapStr += "⌘";
         }
-        if (event.key !== "Shift" && event.key !== "Alt" && event.key !== "Meta" && event.key !== "Control") {
-            if (event.key === "ArrowUp") {
-                keymapStr += "↑";
-            } else if (event.key === "ArrowDown") {
-                keymapStr += "↓";
-            } else if (event.key === "ArrowLeft") {
-                keymapStr += "←";
-            } else if (event.key === "ArrowRight") {
-                keymapStr += "→";
-            } else if (event.key === "Tab") {
-                keymapStr += "⇥";
-            } else if (event.key === "Backspace") {
-                keymapStr += "⌫";
-            } else if (event.key === "Delete") {
-                keymapStr += "⌦";
-            } else if (event.key === "Enter") {
-                keymapStr += "↩";
-            } else if (Constants.KEYCODE[event.keyCode]) {
-                if (event.shiftKey) {
-                    keymapStr += Constants.KEYCODE[event.keyCode][1];
-                } else {
-                    keymapStr += Constants.KEYCODE[event.keyCode][0];
+        if (event.key !== "Shift" && event.key !== "Alt" && event.key !== "Meta" && event.key !== "Control" && event.key !== "Unidentified") {
+            if (event.keyCode === 229) {
+                // windows 中文输入法下 shift + - 等
+                if (event.code === "Minus") {
+                    keymapStr += "-";
+                } else if (event.code === "Semicolon") {
+                    keymapStr += ";";
+                } else if (event.code === "Quote") {
+                    keymapStr += "'";
+                } else if (event.code === "Comma") {
+                    keymapStr += ",";
+                } else if (event.code === "Period") {
+                    keymapStr += ".";
+                } else if (event.code === "Slash") {
+                    keymapStr += "/";
                 }
-            } else if (["/", ".", "+", "-", "*"].includes(event.key)) {
-                keymapStr += event.key;
-            } else if (event.code.startsWith("Digit") || event.code.startsWith("Key") || event.code.startsWith("Numpad")) {
-                // 新版 Electron 可以支持 Alt["I", "E", "N", "U"]，故移除原有判断
-                keymapStr += event.code.substring(event.code.length - 1).toUpperCase();
             } else {
-                keymapStr += event.key === "Unidentified" ? "" : (event.key.length > 1 ? event.key : event.key.toUpperCase());
+                keymapStr += Constants.KEYCODELIST[event.keyCode] || (event.key.length > 1 ? event.key : event.key.toUpperCase());
             }
         }
         it.setAttribute("data-value", keymapStr);

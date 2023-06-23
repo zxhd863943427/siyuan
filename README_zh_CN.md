@@ -100,11 +100,10 @@
 
 [![Star History Chart](https://api.star-history.com/svg?repos=siyuan-note/siyuan&type=Date)](https://star-history.com/#siyuan-note/siyuan&Date)
 
-
 ## 🗺️ 路线图
 
 * [思源笔记开发计划和进度](https://github.com/orgs/siyuan-note/projects/1)
-* [思源笔记版本变更和公告](https://ld246.com/tag/siyuan-announcement)
+* [思源笔记版本变更和公告](CHANGELOG.md)
 
 ## 🚀 下载安装
 
@@ -208,6 +207,7 @@
 * `templates` 用于保存模板片段
 * `widgets` 用于保存挂件
 * `plugins` 用于保存插件
+* `public` 用于保存公开的数据
 * 其余文件夹就是用户自己创建的笔记本文件夹，笔记本文件夹下 `.sy` 后缀的文件用于保存文档数据，数据格式为 JSON
 
 ### 支持通过第三方同步盘进行数据同步吗？
@@ -243,7 +243,7 @@
 * 如果是桌面端通过安装包安装的，可打开 <kbd>设置</kbd> - <kbd>关于</kbd> - <kbd>自动下载更新安装包</kbd> 选项，这样思源会自动下载最新版安装包并提示安装
 * 如果是通过手动安装包安装的，请再次下载安装包安装
 
-可在 <kbd>设置</kbd> - <kbd>关于</kbd> - <kbd>当前版本</kbd> 中 <kbd>检查更新</kbd>，也可以通过关注 [GitHub Releases](https://github.com/siyuan-note/siyuan/releases) 或者[思源笔记公告](https://ld246.com/tag/siyuan-announcement)来获取新版本。
+可在 <kbd>设置</kbd> - <kbd>关于</kbd> - <kbd>当前版本</kbd> 中 <kbd>检查更新</kbd>，也可以通过关注 [GitHub Releases](https://github.com/siyuan-note/siyuan/releases) 来获取新版本。
 
 **注意**：切勿将工作空间放置于安装目录下，因为更新版本会清空安装目录下的所有文件
 

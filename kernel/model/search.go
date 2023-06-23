@@ -886,16 +886,14 @@ func fromSQLBlock(sqlBlock *sql.Block, terms string, beforeLen int) (block *Bloc
 	}
 
 	id := sqlBlock.ID
-	content := sqlBlock.Content
-	p := sqlBlock.Path
-
+	content := util.EscapeHTML(sqlBlock.Content) // Search dialog XSS https://github.com/siyuan-note/siyuan/issues/8525
 	content, _ = markSearch(content, terms, beforeLen)
 	content = maxContent(content, 5120)
 	markdown := maxContent(sqlBlock.Markdown, 5120)
 
 	block = &Block{
 		Box:      sqlBlock.Box,
-		Path:     p,
+		Path:     sqlBlock.Path,
 		ID:       id,
 		RootID:   sqlBlock.RootID,
 		ParentID: sqlBlock.ParentID,

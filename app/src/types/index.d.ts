@@ -308,6 +308,7 @@ interface ILayoutJSON extends ILayoutOptions {
     rootId?: string
     active?: boolean
     pin?: boolean
+    isPreview?: boolean
     customModelData?: any
     customModelType?: string
     config?: ISearchOption
@@ -325,7 +326,8 @@ interface IDockTab {
 }
 
 interface ICommand {
-    langKey: string, // 多语言 key
+    langKey: string, // 用于区分不同快捷键的 key, 同时作为 i18n 的字段名
+    langText?: string, // 显示的文本, 指定后不再使用 langKey 对应的 i18n 文本
     hotkey: string,
     customHotkey?: string,
     callback?: () => void
@@ -492,6 +494,7 @@ interface IAccount {
 }
 
 interface IConfig {
+    cloudRegion: number
     bazaar: {
         trust: boolean
     }
@@ -519,6 +522,7 @@ interface IConfig {
     sync: {
         generateConflictDoc: boolean
         enabled: boolean
+        perception: boolean
         mode: number
         synced: number
         stat: string
@@ -554,6 +558,7 @@ interface IConfig {
             port: string
             scheme: string
         }
+        name: string
         kernelVersion: string
         isInsider: boolean
         appDir: string

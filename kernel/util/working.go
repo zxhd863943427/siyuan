@@ -41,7 +41,7 @@ import (
 var Mode = "prod"
 
 const (
-	Ver       = "2.9.0"
+	Ver       = "2.9.2"
 	IsInsider = false
 )
 
@@ -52,7 +52,7 @@ var (
 )
 
 func Boot() {
-	IncBootProgress(3, "Booting...")
+	IncBootProgress(3, "Booting kernel...")
 	rand.Seed(time.Now().UTC().UnixNano())
 	initMime()
 	initHttpClient()
@@ -110,8 +110,6 @@ func Boot() {
 	}
 
 	initPathDir()
-	go initPandoc()
-	go initTesseract()
 
 	bootBanner := figure.NewColorFigure("SiYuan", "isometric3", "green", true)
 	logging.LogInfof("\n" + bootBanner.String())
@@ -198,34 +196,30 @@ func initWorkspaceDir(workspaceArg string) {
 			defaultWorkspaceDir = filepath.Join(userProfile, "Documents", "SiYuan")
 		}
 	}
-	if err := os.MkdirAll(defaultWorkspaceDir, 0755); nil != err && !os.IsExist(err) {
-		logging.LogErrorf("create default workspace folder [%s] failed: %s", defaultWorkspaceDir, err)
-		os.Exit(logging.ExitCodeInitWorkspaceErr)
-	}
 
 	var workspacePaths []string
 	if !gulu.File.IsExist(workspaceConf) {
 		WorkspaceDir = defaultWorkspaceDir
-		if "" != workspaceArg {
-			WorkspaceDir = workspaceArg
-		}
 	} else {
 		workspacePaths, _ = ReadWorkspacePaths()
-
 		if 0 < len(workspacePaths) {
 			// 取最后一个（也就是最近打开的）工作空间
 			WorkspaceDir = workspacePaths[len(workspacePaths)-1]
 		} else {
 			WorkspaceDir = defaultWorkspaceDir
 		}
+	}
 
-		if "" != workspaceArg {
-			WorkspaceDir = workspaceArg
-		}
+	if "" != workspaceArg {
+		WorkspaceDir = workspaceArg
 	}
 
 	if !gulu.File.IsDir(WorkspaceDir) {
 		logging.LogWarnf("use the default workspace [%s] since the specified workspace [%s] is not a dir", WorkspaceDir, defaultWorkspaceDir)
+		if err := os.MkdirAll(defaultWorkspaceDir, 0755); nil != err && !os.IsExist(err) {
+			logging.LogErrorf("create default workspace folder [%s] failed: %s", defaultWorkspaceDir, err)
+			os.Exit(logging.ExitCodeInitWorkspaceErr)
+		}
 		WorkspaceDir = defaultWorkspaceDir
 	}
 	workspacePaths = append(workspacePaths, WorkspaceDir)
@@ -360,6 +354,12 @@ func initPathDir() {
 	emojis := filepath.Join(DataDir, "emojis")
 	if err := os.MkdirAll(emojis, 0755); nil != err && !os.IsExist(err) {
 		logging.LogFatalf(logging.ExitCodeInitWorkspaceErr, "create data emojis folder [%s] failed: %s", widgets, err)
+	}
+
+	// Support directly access `data/public/*` contents via URL link https://github.com/siyuan-note/siyuan/issues/8593
+	public := filepath.Join(DataDir, "public")
+	if err := os.MkdirAll(public, 0755); nil != err && !os.IsExist(err) {
+		logging.LogFatalf(logging.ExitCodeInitWorkspaceErr, "create data public folder [%s] failed: %s", widgets, err)
 	}
 }
 
