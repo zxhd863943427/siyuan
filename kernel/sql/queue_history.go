@@ -83,7 +83,8 @@ func FlushHistoryQueue() {
 		if err = execHistoryOp(op, tx, context); nil != err {
 			tx.Rollback()
 			logging.LogErrorf("queue operation failed: %s", err)
-			continue
+			eventbus.Publish(util.EvtSQLHistoryRebuild)
+			return
 		}
 
 		if err = commitHistoryTx(tx); nil != err {

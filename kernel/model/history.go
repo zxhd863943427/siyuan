@@ -33,6 +33,7 @@ import (
 	"github.com/88250/lute/ast"
 	"github.com/88250/lute/parse"
 	"github.com/88250/lute/render"
+	"github.com/siyuan-note/eventbus"
 	"github.com/siyuan-note/filelock"
 	"github.com/siyuan-note/logging"
 	"github.com/siyuan-note/siyuan/kernel/conf"
@@ -564,7 +565,12 @@ func getHistoryDir(suffix string, t time.Time) (ret string, err error) {
 	return
 }
 
-func ReindexHistory() (err error) {
+func ReindexHistory() {
+	task.AppendTask(task.HistoryDatabaseIndexFull, fullReindexHistory)
+	return
+}
+
+func fullReindexHistory() {
 	historyDirs, err := os.ReadDir(util.HistoryDir)
 	if nil != err {
 		logging.LogErrorf("read history dir [%s] failed: %s", util.HistoryDir, err)
@@ -685,4 +691,14 @@ func fromSQLHistories(sqlHistories []*sql.History) (ret []*HistoryItem) {
 		ret = append(ret, item)
 	}
 	return
+}
+
+func init() {
+	subscribeSQLHistoryEvents()
+}
+
+func subscribeSQLHistoryEvents() {
+	eventbus.Subscribe(util.EvtSQLHistoryRebuild, func() {
+		ReindexHistory()
+	})
 }

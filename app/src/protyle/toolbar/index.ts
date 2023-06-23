@@ -17,12 +17,12 @@ import {updateTransaction} from "../wysiwyg/transaction";
 import {Constants} from "../../constants";
 import {getEventName, openByMobile, setStorageVal} from "../util/compatibility";
 import {upDownHint} from "../../util/upDownHint";
-import {highlightRender} from "../markdown/highlightRender";
+import {highlightRender} from "../render/highlightRender";
 import {getContenteditableElement, hasNextSibling, hasPreviousSibling} from "../wysiwyg/getBlock";
 import {processRender} from "../util/processCode";
 import {BlockRef} from "./BlockRef";
 import {hintRenderAssets, hintRenderTemplate, hintRenderWidget} from "../hint/extend";
-import {blockRender} from "../markdown/blockRender";
+import {blockRender} from "../render/blockRender";
 /// #if !BROWSER
 import {openBy} from "../../editor/util";
 /// #endif
@@ -41,7 +41,7 @@ import {previewTemplate} from "./util";
 import {hideMessage, showMessage} from "../../dialog/message";
 import {InlineMath} from "./InlineMath";
 import {InlineMemo} from "./InlineMemo";
-import {mathRender} from "../markdown/mathRender";
+import {mathRender} from "../render/mathRender";
 import {linkMenu} from "../../menus/protyle";
 import {addScript} from "../util/addScript";
 import {confirmDialog} from "../../dialog/confirmDialog";
@@ -344,7 +344,7 @@ export class Toolbar {
                         return true;
                     }
                 });
-                if (rangeTypes.length === 0) {
+                if (rangeTypes.length === 0 || type === "clear") {
                     newNodes.push(document.createTextNode(Constants.ZWSP));
                 } else {
                     // 遇到以下类型结尾不应继承 https://github.com/siyuan-note/siyuan/issues/7200
@@ -393,6 +393,14 @@ export class Toolbar {
                         }
                         newNodes.push(document.createTextNode(item.textContent));
                     } else {
+                        if (selectText && type === "clear" && textObj && textObj.type === "text") {
+                            // 选中内容中没有样式需要清除时直接返回，否则清除粗体中部分内容会报错
+                            if (item.style.color === "" && item.style.webkitTextFillColor === "" && item.style.webkitTextStroke === "" && item.style.textShadow === "" && item.style.backgroundColor === "" && item.style.fontSize === "") {
+                                item.setAttribute("data-type", types.join(" "));
+                                newNodes.push(item);
+                                return true;
+                            }
+                        }
                         if (type === "clear") {
                             item.style.color = "";
                             item.style.webkitTextFillColor = "";
@@ -995,7 +1003,7 @@ export class Toolbar {
                 return;
             }
             setTimeout(() => {
-                addScript("stage/protyle/js/html2canvas.min.js?v=1.4.1", "protyleHtml2canvas").then(() => {
+                addScript("/stage/protyle/js/html2canvas.min.js?v=1.4.1", "protyleHtml2canvas").then(() => {
                     window.html2canvas(renderElement, {useCORS: true}).then((canvas) => {
                         canvas.toBlob((blob: Blob) => {
                             const formData = new FormData();

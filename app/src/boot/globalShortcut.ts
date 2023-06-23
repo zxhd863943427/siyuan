@@ -391,7 +391,7 @@ export const globalShortcut = (app: App) => {
     });
 
     window.addEventListener("keydown", (event) => {
-        if (document.getElementById("errorLog") || event.isComposing) {
+        if (document.querySelector(".av__mask") || document.getElementById("errorLog") || event.isComposing) {
             return;
         }
         const target = event.target as HTMLElement;
@@ -679,7 +679,7 @@ export const globalShortcut = (app: App) => {
             // remove blockpopover
             const maxEditLevels: { [key: string]: number } = {oid: 0};
             window.siyuan.blockPanels.forEach((item) => {
-                if (item.targetElement && item.element.getAttribute("data-pin") === "true") {
+                if ((item.targetElement || typeof item.x === "number") && item.element.getAttribute("data-pin") === "true") {
                     const level = parseInt(item.element.getAttribute("data-level"));
                     const oid = item.element.getAttribute("data-oid");
                     if (maxEditLevels[oid]) {
@@ -694,7 +694,7 @@ export const globalShortcut = (app: App) => {
             let destroyBlock = false;
             for (let i = 0; i < window.siyuan.blockPanels.length; i++) {
                 const item = window.siyuan.blockPanels[i];
-                if (item.targetElement && item.element.getAttribute("data-pin") === "false" &&
+                if ((item.targetElement || typeof item.x === "number") && item.element.getAttribute("data-pin") === "false" &&
                     parseInt(item.element.getAttribute("data-level")) > (maxEditLevels[item.element.getAttribute("data-oid")] || 0)) {
                     item.destroy();
                     destroyBlock = true;
@@ -822,6 +822,8 @@ export const globalShortcut = (app: App) => {
             }
         });
         if (matchCommand) {
+            event.stopPropagation();
+            event.preventDefault();
             return true;
         }
 
@@ -1210,6 +1212,7 @@ const fileTreeKeydown = (app: App, event: KeyboardEvent) => {
         event.preventDefault();
         return true;
     }
+
     if (matchHotKey("⌘/", event)) {
         const liRect = liElements[0].getBoundingClientRect();
         if (isFile) {
@@ -1222,6 +1225,7 @@ const fileTreeKeydown = (app: App, event: KeyboardEvent) => {
         }
         return true;
     }
+
     if (isFile && matchHotKey(window.siyuan.config.keymap.general.move.custom, event)) {
         window.siyuan.menus.menu.remove();
         const pathes = getTopPaths(liElements);
@@ -1231,6 +1235,19 @@ const fileTreeKeydown = (app: App, event: KeyboardEvent) => {
         event.preventDefault();
         return true;
     }
+
+    if (isFile && matchHotKey(window.siyuan.config.keymap.editor.general.insertRight.custom, event)) {
+        window.siyuan.menus.menu.remove();
+        openFileById({
+            app,
+            id: liElements[0].getAttribute("data-node-id"),
+            action: [Constants.CB_GET_FOCUS],
+            position: "right",
+        });
+        event.preventDefault();
+        return true;
+    }
+
     let searchKey = "";
     if (matchHotKey(window.siyuan.config.keymap.general.replace.custom, event)) {
         searchKey = window.siyuan.config.keymap.general.replace.custom;

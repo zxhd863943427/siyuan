@@ -313,7 +313,7 @@ const getUnInitTab = (options: IOpenFileOptions) => {
                 item.headElement.setAttribute("data-initdata", JSON.stringify(initObj));
                 item.parent.switchTab(item.headElement);
                 return true;
-            } else if (initObj.instance === "Custom" && objEquals(initObj.customModelData, options.custom.data)) {
+            } else if (initObj.instance === "Custom" && options.custom && objEquals(initObj.customModelData, options.custom.data)) {
                 item.parent.switchTab(item.headElement);
                 return true;
             }
@@ -484,7 +484,9 @@ export const updatePanelByEditor = (options: {
         ) {
             return;
         }
-        title = options.protyle.title.editElement.textContent;
+        if (options.protyle.title) {
+            title = options.protyle.title.editElement.textContent;
+        }
         if (options.resize) {
             resize(options.protyle);
         }
@@ -545,12 +547,17 @@ export const updateOutline = (models: IModels, protyle: IProtyle, reload = false
             if (blockId === item.blockId && !reload) {
                 return;
             }
+            if (protyle && !protyle.preview.element.classList.contains("fn__none")) {
+                protyle.preview.render(protyle);
+                return;
+            }
             fetchPost("/api/outline/getDocOutline", {
                 id: blockId,
             }, response => {
-                if (!isCurrentEditor(blockId) || item.blockId === blockId) {
+                if (!reload && (!isCurrentEditor(blockId) || item.blockId === blockId)) {
                     return;
                 }
+                item.isPreview = false;
                 item.update(response, blockId);
                 if (protyle) {
                     item.updateDocTitle(protyle.background.ial);
@@ -567,7 +574,6 @@ export const updateOutline = (models: IModels, protyle: IProtyle, reload = false
                     item.updateDocTitle();
                 }
             });
-            return;
         }
     });
 };
