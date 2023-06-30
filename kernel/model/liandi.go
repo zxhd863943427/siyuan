@@ -1,4 +1,4 @@
-// SiYuan - Build Your Eternal Digital Garden
+// SiYuan - Refactor your thinking
 // Copyright (c) 2020-present, b3log.org
 //
 // This program is free software: you can redistribute it and/or modify
@@ -302,7 +302,9 @@ func refreshAnnouncement() {
 		}
 		if !exist {
 			existingAnnouncements = append(existingAnnouncements, announcement)
-			newAnnouncements = append(newAnnouncements, announcement)
+			if Conf.CloudRegion == announcement.Region {
+				newAnnouncements = append(newAnnouncements, announcement)
+			}
 		}
 	}
 

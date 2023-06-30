@@ -16,7 +16,14 @@ export class Plugin {
     public i18n: IObject;
     public eventBus: EventBus;
     public data: any = {};
+    public displayName: string;
     public name: string;
+    public protyleSlash: {
+        filter: string[],
+        html: string,
+        id: string,
+        callback: (protyle: import("../protyle").Protyle) => void
+    }[] = [];
     // TODO
     public customBlockRenders: {
         [key: string]: {
@@ -47,11 +54,13 @@ export class Plugin {
     constructor(options: {
         app: App,
         name: string,
+        displayName: string,
         i18n: IObject
     }) {
         this.app = options.app;
         this.i18n = options.i18n;
         this.name = options.name;
+        this.displayName = options.displayName;
         this.eventBus = new EventBus(options.name);
     }
 

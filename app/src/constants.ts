@@ -41,7 +41,7 @@ export abstract class Constants {
 
     // size
     public static readonly SIZE_LINK_TEXT_MAX: number = 24;
-    public static readonly SIZE_TOOLBAR_HEIGHT: number = isMobile() ? 0 : 32;
+    public static readonly SIZE_TOOLBAR_HEIGHT: number = isMobile() ? 0 : 28;
     public static readonly SIZE_GET_MAX = 102400;
     public static readonly SIZE_UNDO = 64;
     public static readonly SIZE_TITLE = 512;
@@ -211,6 +211,7 @@ export abstract class Constants {
     // "⌘Home", "⌘End", "⇧↩", "↩", "PageUp", "PageDown", "⌫", "⌦" 不可自定义
     public static readonly SIYUAN_KEYMAP: IKeymap = {
         general: {
+            commandPanel: {default: "⌥⇧P", custom: "⌥⇧P"},
             editMode: {default: "⇧⌘G", custom: "⇧⌘G"},
             syncNow: {default: "F9", custom: "F9"},
             enterBack: {default: "⌥←", custom: "⌥←"},

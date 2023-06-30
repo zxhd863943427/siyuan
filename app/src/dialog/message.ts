@@ -19,6 +19,13 @@ export const initMessage = () => {
                 }, Constants.TIMEOUT_INPUT);
                 event.preventDefault();
                 break;
+            } else if (target.tagName === "A" || target.tagName === "BUTTON") {
+                break;
+            } else if (target.classList.contains("b3-snackbar")) {
+                hideMessage(target.getAttribute("data-id"));
+                event.preventDefault();
+                event.stopPropagation();
+                break;
             }
             target = target.parentElement;
         }

@@ -25,8 +25,12 @@ type TOperation =
     | "updateAttrViewCell"
 type TBazaarType = "templates" | "icons" | "widgets" | "themes" | "plugins"
 type TCardType = "doc" | "notebook" | "all"
-type TEventBus = "ws-main" | "click-blockicon" | "click-editorcontent" | "click-pdf" |
-    "click-editortitleicon" | "open-noneditableblock" | "loaded-protyle"
+type TEventBus = "ws-main" |
+    "click-blockicon" | "click-editorcontent" | "click-pdf" | "click-editortitleicon" |
+    "open-noneditableblock" |
+    "open-menu-blockref" | "open-menu-fileannotationref" | "open-menu-tag" | "open-menu-link" | "open-menu-image" |
+    "open-menu-av" | "open-menu-content" |
+    "loaded-protyle"
 type TAVCol = "text" | "date" | "number" | "relation" | "rollup" | "select" | "block"
 
 declare module "blueimp-md5"
@@ -337,6 +341,7 @@ interface ICommand {
 }
 
 interface IPluginData {
+    displayName: string,
     name: string,
     js: string,
     css: string,
@@ -497,6 +502,7 @@ interface IConfig {
     cloudRegion: number
     bazaar: {
         trust: boolean
+        petalDisabled: boolean
     }
     repo: {
         key: string
@@ -827,10 +833,12 @@ interface IAVRow {
 }
 
 interface IAVCell {
+    id: string,
     color: string,
     bgColor: string,
     value: string,
     renderValue: {
         content: string,
+        id: string,
     }
 }

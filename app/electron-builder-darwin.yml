@@ -21,6 +21,7 @@ mac:
   extendInfo:
     - NSMicrophoneUsageDescription: "This app requires microphone access to record audio."
   entitlementsInherit: "../../entitlements.mas.plist"
+  minimumSystemVersion: "10.15"
   extraResources:
     - from: "kernel-darwin"
       to: "kernel"
@@ -36,6 +37,9 @@ extraResources:
   - from: "guide"
     to: "guide"
     filter: "!**/{.DS_Store,.git,.gitignore,.idea}"
+  - from: "appearance/boot"
+    to: "appearance/boot"
+    filter: "!**/{.DS_Store}"
   - from: "appearance/icons"
     to: "appearance/icons"
     filter: "!**/{.DS_Store}"

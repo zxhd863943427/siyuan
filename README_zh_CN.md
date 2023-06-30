@@ -1,7 +1,7 @@
 <p align="center">
 <img alt="SiYuan" src="https://b3log.org/images/brand/siyuan-128.png">
 <br>
-构建你永恒的数字花园
+重构你的思维
 <br><br>
 <a title="Build Status" target="_blank" href="https://github.com/siyuan-note/siyuan/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/siyuan-note/siyuan/cd.yml?style=flat-square"></a>
 <a title="Releases" target="_blank" href="https://github.com/siyuan-note/siyuan/releases"><img src="https://img.shields.io/github/release/siyuan-note/siyuan.svg?style=flat-square&color=9CF"></a>
@@ -30,7 +30,7 @@
 
 思源笔记是一款隐私优先的个人知识管理系统，支持细粒度块级引用和 Markdown 所见即所得。
 
-![feature0.png](https://b3logfile.com/file/2022/10/feature0-EHMFc7T.png)
+![feature0.png](screenshots/feature0.png)
 
 欢迎到[思源笔记官方讨论区](https://ld246.com/domain/siyuan)了解更多。同时也欢迎关注 B3log 开源社区微信公众号 `B3log开源`：
 
@@ -282,7 +282,7 @@
 
 所有本地功能都是免费的，即使是在商业环境下使用。
 
-[云端服务](https://b3log.org/siyuan/pricing.html)需要年付订阅。目前仅支持中国大陆地区用户订阅，非中国大陆地区用户请勿订阅。
+[云端服务](https://b3log.org/siyuan/pricing.html)需要年付订阅。
 
 如果你没有订阅需求但又想支持开发，欢迎进行捐赠：
 

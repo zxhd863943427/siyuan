@@ -19,6 +19,7 @@ import {Menu} from "../plugin/Menu";
 import {fetchPost} from "../util/fetch";
 import {needSubscribe} from "../util/needSubscribe";
 import * as dayjs from "dayjs";
+import {commandPanel} from "../plugin/commandPanel";
 
 export const updateEditModeElement = () => {
     const target = document.querySelector("#barReadonly");
@@ -36,17 +37,17 @@ export const updateEditModeElement = () => {
 export const initBar = (app: App) => {
     const toolbarElement = document.getElementById("toolbar");
     toolbarElement.innerHTML = `
-<div id="barWorkspace" class="toolbar__item">
+<div id="barWorkspace" class="toolbar__item toolbar__item--active">
     <span class="toolbar__text">${getWorkspaceName()}</span>
     <svg class="toolbar__svg"><use xlink:href="#iconDown"></use></svg>
 </div>
 <div id="barSync" data-position="top" data-type="a" class="toolbar__item${window.siyuan.config.readonly ? " fn__none" : ""}">
     <svg><use xlink:href="#iconCloudSucc"></use></svg>
 </div>
-<button id="barBack" data-menu="true" class="toolbar__item toolbar__item--disabled b3-tooltips b3-tooltips__se" aria-label="${window.siyuan.languages.goBack} ${updateHotkeyTip(window.siyuan.config.keymap.general.goBack.custom)}">
+<button id="barBack" data-type="a" class="toolbar__item toolbar__item--disabled" aria-label="${window.siyuan.languages.goBack} ${updateHotkeyTip(window.siyuan.config.keymap.general.goBack.custom)}">
     <svg><use xlink:href="#iconBack"></use></svg>
 </button>
-<button id="barForward" data-menu="true" class="toolbar__item toolbar__item--disabled b3-tooltips b3-tooltips__se" aria-label="${window.siyuan.languages.goForward} ${updateHotkeyTip(window.siyuan.config.keymap.general.goForward.custom)}">
+<button id="barForward" data-type="a" class="toolbar__item toolbar__item--disabled" aria-label="${window.siyuan.languages.goForward} ${updateHotkeyTip(window.siyuan.config.keymap.general.goForward.custom)}">
     <svg><use xlink:href="#iconForward"></use></svg>
 </button>
 <div class="fn__flex-1 fn__ellipsis" id="drag"><span class="fn__none">开发版，使用前请进行备份 Development version, please backup before use</span></div>
@@ -303,6 +304,22 @@ export const setZoom = (type: "zoomIn" | "zoomOut" | "restore") => {
 
 const openPlugin = (app: App, target: Element) => {
     const menu = new Menu("topBarPlugin");
+    menu.addItem({
+        icon: "iconSettings",
+        label: window.siyuan.languages.config,
+        click() {
+            openSetting(app).element.querySelector('.b3-tab-bar [data-name="bazaar"]').dispatchEvent(new CustomEvent("click"));
+        }
+    });
+    menu.addItem({
+        icon: "iconLayoutBottom",
+        accelerator: window.siyuan.config.keymap.general.commandPanel.custom,
+        label: window.siyuan.languages.commandPanel,
+        click() {
+            commandPanel(app);
+        }
+    });
+    menu.addSeparator();
     let hasPlugin = false;
     app.plugins.forEach((plugin) => {
         // @ts-ignore
@@ -358,25 +375,16 @@ const openPlugin = (app: App, target: Element) => {
             hasPlugin = true;
             menu.addItem({
                 icon: "iconSettings",
-                label: plugin.name,
+                label: plugin.displayName,
                 click() {
                     plugin.openSetting();
                 }
             });
         }
     });
-
-    if (hasPlugin) {
-        menu.addSeparator();
+    if (!hasPlugin) {
+        window.siyuan.menus.menu.element.querySelector(".b3-menu__separator").remove();
     }
-    menu.addItem({
-        icon: "iconSettings",
-        label: window.siyuan.languages.config,
-        click() {
-            const dialogSetting = openSetting(app);
-            dialogSetting.element.querySelector('.b3-tab-bar [data-name="bazaar"]').dispatchEvent(new CustomEvent("click"));
-        }
-    });
     let rect = target.getBoundingClientRect();
     if (rect.width === 0) {
         rect = document.querySelector("#barMore").getBoundingClientRect();

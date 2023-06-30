@@ -1,4 +1,4 @@
-// SiYuan - Build Your Eternal Digital Garden
+// SiYuan - Refactor your thinking
 // Copyright (c) 2020-present, b3log.org
 //
 // This program is free software: you can redistribute it and/or modify
@@ -516,7 +516,7 @@ func Close(force bool, execInstallPkg int) (exitCode int) {
 		util.PushMsg(Conf.Language(130), 1000*5)
 		// 桌面端退出拉起更新安装时有时需要重启两次 https://github.com/siyuan-note/siyuan/issues/6544
 		// 这里多等待一段时间，等待安装程序启动
-		time.Sleep(4 * time.Second)
+		time.Sleep(3 * time.Second)
 	}
 	logging.LogInfof("exited kernel")
 	closeSyncWebSocket()
@@ -554,7 +554,7 @@ func (conf *AppConf) Save() {
 	}
 
 	confSaveLock.Lock()
-	confSaveLock.Unlock()
+	defer confSaveLock.Unlock()
 
 	newData, _ := gulu.JSON.MarshalIndentJSON(Conf, "", "  ")
 	confPath := filepath.Join(util.ConfDir, "conf.json")

@@ -1,7 +1,7 @@
 <p align="center">
 <img alt="SiYuan" src="https://b3log.org/images/brand/siyuan-128.png">
 <br>
-Build Your Eternal Digital Garden
+Refactor your thinking
 <br><br>
 <a title="Build Status" target="_blank" href="https://github.com/siyuan-note/siyuan/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/siyuan-note/siyuan/cd.yml?style=flat-square"></a>
 <a title="Releases" target="_blank" href="https://github.com/siyuan-note/siyuan/releases"><img src="https://img.shields.io/github/release/siyuan-note/siyuan.svg?style=flat-square&color=9CF"></a>
@@ -33,7 +33,7 @@ WYSIWYG.
 
 Welcome to [SiYuan English Discussion Forum](https://liuyun.io) to learn more.
 
-![feature0.png](https://b3logfile.com/file/2022/10/feature0-EHMFc7T.png)
+![feature0.png](screenshots/feature0.png)
 
 ## 🔮 Features
 
@@ -79,9 +79,7 @@ Cloud services require a paid subscription.
 
 * VIP identity
 * End-to-end encrypted data sync and backup
-* Cloud assets serving
-* WeChat notification
-* Cloud inbox
+* Cloud assets hosting
 
 ## 🏗️ Architecture design and open source ecosystem
 
@@ -184,7 +182,7 @@ We release insider preview before major updates, please visit [https://github.co
 ## 🏘️ Community
 
 * [English Discussion Forum](https://liuyun.io)
-* [Discord](https://discord.com/invite/bzfCBwMzdP)
+* [User community summary](https://liuyun.io/article/1687779743723)
 * [Awesome SiYuan](https://github.com/siyuan-note/awesome)
 
 ## 🛠️ Development Guide
@@ -279,7 +277,7 @@ The first sub-block under the list item is the block icon omitted. You can move 
 
 All local features are free, even for commercial use.
 
-[Cloud Service](https://b3log.org/siyuan/pricing.html) requires an annual subscription. At present, only users in mainland China are supported to subscribe, and users outside of mainland China are not allowed to subscribe.
+[Cloud Service](https://b3log.org/siyuan/en/pricing.html) require a paid subscription to use.
 
 ## 🙏 Acknowledgement
 

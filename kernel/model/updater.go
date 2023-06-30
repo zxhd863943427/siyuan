@@ -1,4 +1,4 @@
-// SiYuan - Build Your Eternal Digital Garden
+// SiYuan - Refactor your thinking
 // Copyright (c) 2020-present, b3log.org
 //
 // This program is free software: you can redistribute it and/or modify
@@ -41,7 +41,7 @@ func execNewVerInstallPkg(newVerInstallPkgPath string) {
 	logging.LogInfof("installing the new version [%s]", newVerInstallPkgPath)
 	var cmd *exec.Cmd
 	if gulu.OS.IsWindows() {
-		cmd = exec.Command(newVerInstallPkgPath)
+		cmd = exec.Command("cmd.exe", "/C", "start", newVerInstallPkgPath)
 	} else if gulu.OS.IsDarwin() {
 		exec.Command("chmod", "+x", newVerInstallPkgPath).CombinedOutput()
 		cmd = exec.Command("open", newVerInstallPkgPath)
@@ -211,9 +211,10 @@ func sha256Hash(filename string) (ret string, err error) {
 }
 
 type Announcement struct {
-	Id    string `json:"id"`
-	Title string `json:"title"`
-	URL   string `json:"url"`
+	Id     string `json:"id"`
+	Title  string `json:"title"`
+	URL    string `json:"url"`
+	Region int    `json:"region"`
 }
 
 func GetAnnouncements() (ret []*Announcement) {
@@ -231,9 +232,10 @@ func GetAnnouncements() (ret []*Announcement) {
 	for _, announcement := range announcements {
 		ann := announcement.(map[string]interface{})
 		ret = append(ret, &Announcement{
-			Id:    ann["id"].(string),
-			Title: ann["title"].(string),
-			URL:   ann["url"].(string),
+			Id:     ann["id"].(string),
+			Title:  ann["title"].(string),
+			URL:    ann["url"].(string),
+			Region: int(ann["region"].(float64)),
 		})
 	}
 	return

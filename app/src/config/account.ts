@@ -15,16 +15,11 @@ import {getCloudURL} from "./util/about";
 export const account = {
     element: undefined as Element,
     genHTML: (onlyPayHTML = false) => {
-        const payHTML = `<a class="b3-button b3-button--big" href="${getCloudURL("subscribe/siyuan")}" target="_blank">
+        const payHTML = `<div>${window.siyuan.languages.account2}</div>
+<div class="fn__hr--b"></div>
+<a class="b3-button b3-button--big" href="${getCloudURL("subscribe/siyuan")}" target="_blank">
     <svg><use xlink:href="#iconVIP"></use></svg>${window.siyuan.languages.account1}
 </a>
-<div class="fn__hr--b"></div>
-<div class="fn__hr--b"></div>
-${window.siyuan.config.cloudRegion === 0 ? window.siyuan.languages.account8 : ""}
-${window.siyuan.config.cloudRegion === 0 ? window.siyuan.languages.account9 : ""}
-<div class="fn__hr"></div>
-${window.siyuan.languages.account2}
-<div>${window.siyuan.languages.account7}</div>
 <div class="fn__hr--b"></div>
 <span class="b3-chip b3-chip--primary b3-chip--hover${(window.siyuan.user && window.siyuan.user.userSiYuanSubscriptionStatus === 2) ? " fn__none" : ""}" id="trialSub">
     <svg class="ft__secondary"><use xlink:href="#iconVIP"></use></svg>
@@ -68,8 +63,6 @@ ${window.siyuan.languages.account2}
                     subscriptionHTML = `<div class="b3-chip b3-chip--primary"><svg><use xlink:href="#iconVIP"></use></svg>${window.siyuan.languages.account3}</div>
 ${renewHTML}
 <div class="fn__hr--b"></div>
-${window.siyuan.config.cloudRegion === 0 ? window.siyuan.languages.account8 : ""}
-${window.siyuan.config.cloudRegion === 0 ? window.siyuan.languages.account9 : ""}
 `;
                 } else {
                     subscriptionHTML = `<div class="b3-chip b3-chip--primary"><svg class="ft__secondary"><use xlink:href="#iconVIP"></use></svg>${window.siyuan.languages.account10}</div>${renewHTML}`;
@@ -82,7 +75,7 @@ ${window.siyuan.config.cloudRegion === 0 ? window.siyuan.languages.account9 : ""
         <a href="${getCloudURL("settings/avatar")}" class="config-account__avatar" style="background-image: url(${window.siyuan.user.userAvatarURL})" target="_blank"></a>
         <h1 class="config-account__name">
             <a target="_blank" class="fn__a" href="${getCloudURL("member/" + window.siyuan.user.userName)}">${window.siyuan.user.userName}</a>
-            <span class="ft__on-surface ft__smaller">${0 === window.siyuan.config.cloudRegion ? "ld246.com":"liuyun.io"}</span>
+            <span class="ft__on-surface ft__smaller">${0 === window.siyuan.config.cloudRegion ? "ld246.com" : "liuyun.io"}</span>
         </h1>
         ${userTitlesHTML}
     </div>

@@ -30,7 +30,7 @@
             --b3-theme-primary: #3573f0;
             --b3-theme-primary-lighter: rgba(53, 115, 240, 0.48);
             --b3-theme-primary-lightest: rgba(53, 115, 240, 0.24);
-            --b3-theme-background: #1e1f22;
+            --b3-theme-background: #1e1e1e;
             --b3-theme-on-background: #c9d1d9;
             --b3-theme-on-primary: #fff;
             background-color: var(--b3-theme-background);
@@ -187,7 +187,7 @@
     <h1 style="margin-bottom: 48px;color:var(--b3-theme-on-background)">{{.workspace}}</h1>
     <input class="b3-text-filed" id="authCode" type="password" placeholder="{{.l0}}"/><br>
     <div style="position: relative;width: 240px;margin: 8px auto 0;display: none">
-        <img id="captchaImg" style="top: 1px;position: absolute;height: 28px;right: 1px;cursor: pointer">
+        <img id="captchaImg" style="top: 1px;position: absolute;height: 27px;right: 1px;cursor: pointer">
         <input id="captcha" class="b3-text-filed" placeholder="{{.l3}}">
     </div>
     <button class="b3-button" onclick="submitAuth()">{{.l1}}</button>
