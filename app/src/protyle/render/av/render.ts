@@ -48,7 +48,21 @@ export const avRender = (element: Element, cb?: () => void) => {
 </div>
 <div class="av__firstcol"><svg><use xlink:href="#iconUncheck"></use></svg></div>`;
                     row.cells.forEach((cell, index) => {
-                        tableHTML += `<div class="av__cell" ${index === 0 ? 'data-block-id="' + (cell.renderValue?.id || "") + '"' : ""} data-id="${cell.id}" data-index="${index}" style="width: ${data.columns[index].width || 200}px;${cell.bgColor ? `background-color:${cell.bgColor};` : ""}${cell.color ? `color:${cell.color};` : ""}">${cell.renderValue?.content || ""}</div>`;
+                        let text: string;
+                        if (cell.valueType === "text") {
+                            text = cell.value?.text.content || "";
+                        } else if (cell.valueType === "block") {
+                            text = cell.value?.block.content || "";
+                        } else if (cell.valueType === "number") {
+                            text = cell.value?.number.content || "";
+                        } else if (cell.valueType === "select") {
+                            text = cell.value?.select.content || "";
+                        } else if (cell.valueType === "mSelect") {
+                            text = cell.value?.mSelect.content || "";
+                        } else if (cell.valueType === "date") {
+                            text = cell.value?.date.content || "";
+                        }
+                        tableHTML += `<div class="av__cell" ${index === 0 ? 'data-block-id="' + (cell.value.block.id || "") + '"' : ""} data-id="${cell.id}" data-index="${index}" style="width: ${data.columns[index].width || 200}px;${cell.bgColor ? `background-color:${cell.bgColor};` : ""}${cell.color ? `color:${cell.color};` : ""}">${text}</div>`;
                     });
                     tableHTML += "<div></div></div>";
                 });
@@ -57,13 +71,14 @@ export const avRender = (element: Element, cb?: () => void) => {
                 e.style.width = e.parentElement.clientWidth + "px";
                 e.style.alignSelf = "center";
                 e.firstElementChild.outerHTML = `<div>
-    <div style="padding-left: ${paddingLeft};padding-right: ${paddingRight};">
-        <div>
-            <div>tab1</div>
+    <div class="av__header" style="padding-left: ${paddingLeft};padding-right: ${paddingRight};">
+        <div class="layout-tab-bar fn__flex">
+            <div class="item item--focus">tab1</div>
         </div>
-        <div contenteditable="true">
+        <div contenteditable="true" class="av__title">
             ${data.title}
         </div>
+        <div class="av__counter fn__none"></div>
     </div>
     <div class="av__scroll">
         <div style="padding-left: ${paddingLeft};padding-right: ${paddingRight};float: left;">
@@ -94,7 +109,7 @@ export const refreshAV = (protyle: IProtyle, operation: IOperation) => {
                 showHeaderCellMenu(protyle, item, item.querySelector(".av__row--header").lastElementChild.previousElementSibling as HTMLElement);
             });
         });
-    } else if (operation.action === "insertAttrViewBlock") {
+    } else {
         Array.from(protyle.wysiwyg.element.querySelectorAll(`[data-av-id="${operation.parentID}"]`)).forEach((item: HTMLElement) => {
             item.removeAttribute("data-render");
             avRender(item);

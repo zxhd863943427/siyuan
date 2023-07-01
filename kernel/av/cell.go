@@ -16,32 +16,41 @@
 
 package av
 
-import "github.com/88250/lute/ast"
+import (
+	"github.com/88250/gulu"
+	"github.com/88250/lute/ast"
+)
 
 type Cell struct {
-	ID          string      `json:"id"`
-	Value       string      `json:"value"`
-	ValueType   ColumnType  `json:"valueType"`
-	RenderValue interface{} `json:"renderValue"`
-	Color       string      `json:"color"`
-	BgColor     string      `json:"bgColor"`
+	ID        string     `json:"id"`
+	Value     *Value     `json:"value"`
+	ValueType ColumnType `json:"valueType"`
+	Color     string     `json:"color"`
+	BgColor   string     `json:"bgColor"`
+}
+
+type Value struct {
+	Block   *ValueBlock    `json:"block,omitempty"`
+	Text    *ValueText     `json:"text,omitempty"`
+	Number  *ValueNumber   `json:"number,omitempty"`
+	Date    *ValueDate     `json:"date,omitempty"`
+	Select  *ValueSelect   `json:"select,omitempty"`
+	MSelect []*ValueSelect `json:"mSelect,omitempty"`
+}
+
+func (value *Value) ToJSONString() string {
+	data, err := gulu.JSON.MarshalJSON(value)
+	if nil != err {
+		return ""
+	}
+	return string(data)
 }
 
 func NewCellBlock(blockID, blockContent string) *Cell {
 	return &Cell{
-		ID:          ast.NewNodeID(),
-		Value:       blockID,
-		ValueType:   ColumnTypeBlock,
-		RenderValue: &RenderValueBlock{ID: blockID, Content: blockContent},
-	}
-}
-
-func NewCellText(text string) *Cell {
-	return &Cell{
-		ID:          ast.NewNodeID(),
-		Value:       text,
-		ValueType:   ColumnTypeText,
-		RenderValue: &RenderValueText{Content: text},
+		ID:        ast.NewNodeID(),
+		Value:     &Value{Block: &ValueBlock{ID: blockID, Content: blockContent}},
+		ValueType: ColumnTypeBlock,
 	}
 }
 
@@ -52,11 +61,23 @@ func NewCell(valueType ColumnType) *Cell {
 	}
 }
 
-type RenderValueBlock struct {
+type ValueBlock struct {
 	ID      string `json:"id"`
 	Content string `json:"content"`
 }
 
-type RenderValueText struct {
+type ValueText struct {
+	Content string `json:"content"`
+}
+
+type ValueNumber struct {
+	Content float64 `json:"content"`
+}
+
+type ValueDate struct {
+	Content int64 `json:"content"`
+}
+
+type ValueSelect struct {
 	Content string `json:"content"`
 }
