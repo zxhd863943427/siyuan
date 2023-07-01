@@ -24,6 +24,8 @@ type TOperation =
     | "removeFlashcards"
     | "updateAttrViewCell"
     | "updateAttrViewCol"
+    | "sortAttrViewRow"
+    | "sortAttrViewCol"
 type TBazaarType = "templates" | "icons" | "widgets" | "themes" | "plugins"
 type TCardType = "doc" | "notebook" | "all"
 type TEventBus = "ws-main" |

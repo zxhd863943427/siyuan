@@ -1,6 +1,7 @@
 import {fetchPost} from "../../../util/fetch";
 import {getColIconByType} from "./col";
 import {showHeaderCellMenu} from "./cell";
+import {Constants} from "../../../constants";
 
 export const avRender = (element: Element, cb?: () => void) => {
     let avElements: Element[] = [];
@@ -27,7 +28,7 @@ export const avRender = (element: Element, cb?: () => void) => {
                     if (column.hidden) {
                         return;
                     }
-                    tableHTML += `<div class="av__cell" data-index="${index}" data-id="${column.id}" data-dtype="${column.type}" data-wrap="${column.wrap}" style="width: ${column.width || 200}px;">
+                    tableHTML += `<div draggable="true" class="av__cell" data-index="${index}" data-id="${column.id}" data-dtype="${column.type}" data-wrap="${column.wrap}" style="width: ${column.width || 200}px;">
     <svg><use xlink:href="#${column.icon || getColIconByType(column.type)}"></use></svg>
     <span>${column.name}</span>
 </div>`;
@@ -43,7 +44,7 @@ export const avRender = (element: Element, cb?: () => void) => {
                 // body
                 data.rows.forEach((row: IAVRow) => {
                     tableHTML += `<div class="av__row" data-id="${row.id}">
-<div class="av__gutters" data-position="right" aria-label="${window.siyuan.languages.rowTip}">
+<div class="av__gutters" draggable="true" data-position="right" aria-label="${window.siyuan.languages.rowTip}">
     <button><svg><use xlink:href="#iconLine"></use></svg></button>
 </div>
 <div class="av__firstcol"><svg><use xlink:href="#iconUncheck"></use></svg></div>`;
@@ -62,7 +63,7 @@ export const avRender = (element: Element, cb?: () => void) => {
                         } else if (cell.valueType === "date") {
                             text = cell.value?.date.content || "";
                         }
-                        tableHTML += `<div class="av__cell" ${index === 0 ? 'data-block-id="' + (cell.value.block.id || "") + '"' : ""} data-id="${cell.id}" data-index="${index}" style="width: ${data.columns[index].width || 200}px;${cell.bgColor ? `background-color:${cell.bgColor};` : ""}${cell.color ? `color:${cell.color};` : ""}">${text}</div>`;
+                        tableHTML += `<div class="av__cell" ${cell.valueType === "block" ? 'data-block-id="' + (cell.value.block.id || "") + '"' : ""} data-id="${cell.id}" data-index="${index}" style="width: ${data.columns[index].width || 200}px;${cell.bgColor ? `background-color:${cell.bgColor};` : ""}${cell.color ? `color:${cell.color};` : ""}">${text}</div>`;
                     });
                     tableHTML += "<div></div></div>";
                 });
@@ -101,7 +102,14 @@ export const avRender = (element: Element, cb?: () => void) => {
     }
 };
 
+let lastParentID: string
+let lastElement: HTMLElement
 export const refreshAV = (protyle: IProtyle, operation: IOperation) => {
+    if (lastParentID === operation.parentID && protyle.contentElement.isSameNode(lastElement)) {
+        return
+    }
+    lastElement = protyle.contentElement;
+    lastParentID = operation.parentID;
     if (operation.action === "addAttrViewCol") {
         Array.from(protyle.wysiwyg.element.querySelectorAll(`[data-av-id="${operation.parentID}"]`)).forEach((item: HTMLElement) => {
             item.removeAttribute("data-render");
@@ -115,4 +123,7 @@ export const refreshAV = (protyle: IProtyle, operation: IOperation) => {
             avRender(item);
         });
     }
+    setTimeout(() => {
+        lastParentID = null;
+    }, Constants.TIMEOUT_TRANSITION);
 };
