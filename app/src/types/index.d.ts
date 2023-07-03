@@ -26,6 +26,10 @@ type TOperation =
     | "updateAttrViewCol"
     | "sortAttrViewRow"
     | "sortAttrViewCol"
+    | "setAttrViewColHidden"
+    | "setAttrViewColWrap"
+    | "setAttrViewColWidth"
+    | "setAttrView"
 type TBazaarType = "templates" | "icons" | "widgets" | "themes" | "plugins"
 type TCardType = "doc" | "notebook" | "all"
 type TEventBus = "ws-main" |
@@ -34,7 +38,7 @@ type TEventBus = "ws-main" |
     "open-menu-blockref" | "open-menu-fileannotationref" | "open-menu-tag" | "open-menu-link" | "open-menu-image" |
     "open-menu-av" | "open-menu-content" |
     "loaded-protyle"
-type TAVCol = "text" | "date" | "number" | "relation" | "rollup" | "select" | "block"| "mSelect"
+type TAVCol = "text" | "date" | "number" | "relation" | "rollup" | "select" | "block" | "mSelect"
 
 declare module "blueimp-md5"
 
@@ -818,6 +822,21 @@ interface IBazaarItem {
     hInstallDate: string
     hUpdated: string
     preferredFunding: string
+}
+
+interface IAV {
+    columns: IAVColumn[],
+    filters: [],
+    sorts: IAVSort[],
+    name: string,
+    type: "table"
+    rows: IAVRow[],
+    id: string
+}
+
+interface IAVSort {
+    column: string,
+    order: "ASC" | "DESC"
 }
 
 interface IAVColumn {

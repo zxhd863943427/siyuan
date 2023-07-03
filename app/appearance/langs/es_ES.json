@@ -1,4 +1,8 @@
 {
+  "hideCol": "Ocultar columna",
+  "hideAll": "Ocultar todo",
+  "showAll": "Mostrar todo",
+  "showCol": "Mostrar columna",
   "número": "Número",
   "fecha": "Fecha",
   "seleccionar": "Seleccionar",
@@ -1178,6 +1182,10 @@
     "204": "La documentación en la guía del usuario no permite compartir con la comunidad",
     "205": "El complemento no es compatible con el entorno actual",
     "206": "Ejecutando reemplazo de contenido [%d/%d]",
-    "207": "Ejecutando reemplazo de ruta [%d/%d]"
+    "207": "Ejecutando reemplazo de ruta [%d/%d]",
+    "208": "Cargando lista de índice...",
+    "209": "Cargando índice de verificación...",
+    "210": "Verificando datos en la nube %v/%v",
+    "211": "Verificaci\u00f3n de datos en la nube completada"
   }
 }

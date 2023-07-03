@@ -2,6 +2,7 @@ import {transaction} from "../../wysiwyg/transaction";
 import {hasClosestBlock, hasClosestByClassName} from "../../util/hasClosest";
 import {Menu} from "../../../plugin/Menu";
 import {getColIconByType} from "./col";
+import {fetchPost} from "../../../util/fetch";
 
 export const popTextCell = (protyle: IProtyle, cellElement: HTMLElement) => {
     const type = cellElement.parentElement.parentElement.firstElementChild.children[parseInt(cellElement.getAttribute("data-index")) + 1].getAttribute("data-dtype") as TAVCol;
@@ -38,7 +39,6 @@ export const popTextCell = (protyle: IProtyle, cellElement: HTMLElement) => {
         }
     });
 };
-
 
 const updateCellValue = (protyle: IProtyle, cellElement: HTMLElement, type: TAVCol) => {
     const rowElement = hasClosestByClassName(cellElement, "av__row");
@@ -89,6 +89,8 @@ const removeCol = (cellElement: HTMLElement) => {
 
 export const showHeaderCellMenu = (protyle: IProtyle, blockElement: HTMLElement, cellElement: HTMLElement) => {
     const type = cellElement.getAttribute("data-dtype") as TAVCol;
+    const colId = cellElement.getAttribute("data-id");
+    const avId = blockElement.getAttribute("data-av-id");
     const menu = new Menu("av-header-cell", () => {
         const newValue = (window.siyuan.menus.menu.element.querySelector(".b3-text-field") as HTMLInputElement).value;
         if (newValue === cellElement.textContent.trim()) {
@@ -96,14 +98,14 @@ export const showHeaderCellMenu = (protyle: IProtyle, blockElement: HTMLElement,
         }
         transaction(protyle, [{
             action: "updateAttrViewCol",
-            id: cellElement.getAttribute("data-id"),
-            parentID: blockElement.getAttribute("data-av-id"),
+            id: colId,
+            parentID: avId,
             name: newValue,
             type,
         }], [{
             action: "updateAttrViewCol",
-            id: cellElement.getAttribute("data-id"),
-            parentID: blockElement.getAttribute("data-av-id"),
+            id: colId,
+            parentID: avId,
             name: cellElement.textContent.trim(),
             type,
         }]);
@@ -126,14 +128,48 @@ export const showHeaderCellMenu = (protyle: IProtyle, blockElement: HTMLElement,
         icon: "iconUp",
         label: window.siyuan.languages.fileNameNatASC,
         click() {
-
+            fetchPost("/api/av/renderAttributeView", {id: avId}, (response) => {
+                transaction(protyle, [{
+                    action: "setAttrView",
+                    id: avId,
+                    data: {
+                        sorts: [{
+                            column: colId,
+                            order: "ASC"
+                        }]
+                    }
+                }], [{
+                    action: "setAttrView",
+                    id: avId,
+                    data: {
+                        sorts: response.data.av.sorts
+                    }
+                }]);
+            });
         }
     });
     menu.addItem({
         icon: "iconDown",
         label: window.siyuan.languages.fileNameNatDESC,
         click() {
-
+            fetchPost("/api/av/renderAttributeView", {id: avId}, (response) => {
+                transaction(protyle, [{
+                    action: "setAttrView",
+                    id: avId,
+                    data: {
+                        sorts: [{
+                            column: colId,
+                            order: "DESC"
+                        }]
+                    }
+                }], [{
+                    action: "setAttrView",
+                    id: avId,
+                    data: {
+                        sorts: response.data.av.sorts
+                    }
+                }]);
+            });
         }
     });
     menu.addItem({
@@ -149,7 +185,17 @@ export const showHeaderCellMenu = (protyle: IProtyle, blockElement: HTMLElement,
             icon: "iconEyeoff",
             label: window.siyuan.languages.hide,
             click() {
-
+                transaction(protyle, [{
+                    action: "setAttrViewColHidden",
+                    id: colId,
+                    parentID: avId,
+                    data: true
+                }], [{
+                    action: "setAttrViewColHidden",
+                    id: colId,
+                    parentID: avId,
+                    data: false
+                }]);
             }
         });
         menu.addItem({
@@ -163,17 +209,16 @@ export const showHeaderCellMenu = (protyle: IProtyle, blockElement: HTMLElement,
             icon: "iconTrashcan",
             label: window.siyuan.languages.delete,
             click() {
-                const id = cellElement.getAttribute("data-id");
                 transaction(protyle, [{
                     action: "removeAttrViewCol",
-                    id,
-                    parentID: blockElement.getAttribute("data-av-id"),
+                    id: colId,
+                    parentID: avId,
                 }], [{
                     action: "addAttrViewCol",
                     name: cellElement.textContent.trim(),
-                    parentID: blockElement.getAttribute("data-av-id"),
+                    parentID: avId,
                     type: type,
-                    id
+                    id: colId
                 }]);
                 removeCol(cellElement);
             }
@@ -181,10 +226,23 @@ export const showHeaderCellMenu = (protyle: IProtyle, blockElement: HTMLElement,
         menu.addSeparator();
     }
     menu.addItem({
-        label: `<div class="fn__flex" style="margin-bottom: 4px"><span>${window.siyuan.languages.wrap}</span><span class="fn__space fn__flex-1"></span>
-<input type="checkbox" class="b3-switch fn__flex-center"${cellElement.getAttribute("data-wrap") === "true" ? " checked" : ""}></div>`,
-        click() {
-
+        label: `<div class="fn__flex" style="margin: 4px 0"><span>${window.siyuan.languages.wrap}</span><span class="fn__space fn__flex-1"></span>
+<input type="checkbox" class="b3-switch fn__flex-center"${cellElement.style.whiteSpace === "nowrap" ? "" : " checked"}></div>`,
+        bind(element) {
+            const inputElement = element.querySelector("input") as HTMLInputElement;
+            inputElement.addEventListener("change", () => {
+                transaction(protyle, [{
+                    action: "setAttrViewColWrap",
+                    id: colId,
+                    parentID: avId,
+                    data: inputElement.checked
+                }], [{
+                    action: "setAttrViewColWrap",
+                    id: colId,
+                    parentID: avId,
+                    data: !inputElement.checked
+                }]);
+            });
         }
     });
     const cellRect = cellElement.getBoundingClientRect();
@@ -193,5 +251,9 @@ export const showHeaderCellMenu = (protyle: IProtyle, blockElement: HTMLElement,
         y: cellRect.bottom,
         h: cellRect.height
     });
-    (window.siyuan.menus.menu.element.querySelector(".b3-text-field") as HTMLInputElement)?.select();
+    const inputElement = window.siyuan.menus.menu.element.querySelector(".b3-text-field") as HTMLInputElement;
+    if (inputElement) {
+        inputElement.select();
+        inputElement.focus();
+    }
 };

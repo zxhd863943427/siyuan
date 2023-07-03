@@ -6,6 +6,8 @@ import {copySubMenu} from "../../../menus/commonMenuItem";
 import {popTextCell, showHeaderCellMenu} from "./cell";
 import {getColIconByType, updateHeader} from "./col";
 import {emitOpenMenu} from "../../../plugin/EventBus";
+import {addCol} from "./addCol";
+import {openMenuPanel} from "./openMenuPanel";
 
 export const avClick = (protyle: IProtyle, event: MouseEvent & { target: HTMLElement }) => {
     const blockElement = hasClosestBlock(event.target);
@@ -14,104 +16,9 @@ export const avClick = (protyle: IProtyle, event: MouseEvent & { target: HTMLEle
     }
     const addElement = hasClosestByAttribute(event.target, "data-type", "av-header-add");
     if (addElement) {
-        const menu = new Menu("av-header-add");
-        menu.addItem({
-            icon: "iconAlignLeft",
-            label: window.siyuan.languages.text,
-            click() {
-                const id = Lute.NewNodeID();
-                const type = "text";
-                transaction(protyle, [{
-                    action: "addAttrViewCol",
-                    name: "Text",
-                    parentID: blockElement.getAttribute("data-av-id"),
-                    type,
-                    id
-                }], [{
-                    action: "removeAttrViewCol",
-                    id,
-                    parentID: blockElement.getAttribute("data-av-id"),
-                }]);
-            }
-        });
-        menu.addItem({
-            icon: "iconNumber",
-            label: window.siyuan.languages.number,
-            click() {
-                const id = Lute.NewNodeID();
-                const type = "text";
-                transaction(protyle, [{
-                    action: "addAttrViewCol",
-                    name: "Text",
-                    parentID: blockElement.getAttribute("data-av-id"),
-                    type,
-                    id
-                }], [{
-                    action: "removeAttrViewCol",
-                    id,
-                    parentID: blockElement.getAttribute("data-av-id"),
-                }]);
-            }
-        });
-        menu.addItem({
-            icon: "iconListItem",
-            label: window.siyuan.languages.select,
-            click() {
-                const id = Lute.NewNodeID();
-                const type = "text";
-                transaction(protyle, [{
-                    action: "addAttrViewCol",
-                    name: "Text",
-                    parentID: blockElement.getAttribute("data-av-id"),
-                    type,
-                    id
-                }], [{
-                    action: "removeAttrViewCol",
-                    id,
-                    parentID: blockElement.getAttribute("data-av-id"),
-                }]);
-            }
-        });
-        menu.addItem({
-            icon: "iconList",
-            label: window.siyuan.languages.multiSelect,
-            click() {
-                const id = Lute.NewNodeID();
-                const type = "text";
-                transaction(protyle, [{
-                    action: "addAttrViewCol",
-                    name: "Text",
-                    parentID: blockElement.getAttribute("data-av-id"),
-                    type,
-                    id
-                }], [{
-                    action: "removeAttrViewCol",
-                    id,
-                    parentID: blockElement.getAttribute("data-av-id"),
-                }]);
-            }
-        });
-        menu.addItem({
-            icon: "iconCalendar",
-            label: window.siyuan.languages.date,
-            click() {
-                const id = Lute.NewNodeID();
-                const type = "text";
-                transaction(protyle, [{
-                    action: "addAttrViewCol",
-                    name: "Text",
-                    parentID: blockElement.getAttribute("data-av-id"),
-                    type,
-                    id
-                }], [{
-                    action: "removeAttrViewCol",
-                    id,
-                    parentID: blockElement.getAttribute("data-av-id"),
-                }]);
-            }
-        });
+        const addMenu = addCol(protyle, blockElement);
         const addRect = addElement.getBoundingClientRect();
-        menu.open({
+        addMenu.open({
             x: addRect.left,
             y: addRect.bottom,
             h: addRect.height
@@ -161,15 +68,43 @@ export const avClick = (protyle: IProtyle, event: MouseEvent & { target: HTMLEle
         return true;
     }
 
+    const headerMoreElement = hasClosestByAttribute(event.target, "data-type", "av-header-more");
+    if (headerMoreElement) {
+        openMenuPanel(protyle, blockElement, "properties");
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+    }
+
+    const moreElement = hasClosestByAttribute(event.target, "data-type", "av-more");
+    if (moreElement) {
+        openMenuPanel(protyle, blockElement, "config");
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+    }
+
+    const sortsElement = hasClosestByAttribute(event.target, "data-type", "av-sort");
+    if (sortsElement) {
+        openMenuPanel(protyle, blockElement, "sorts");
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+    }
+
+    const cellHeaderElement = hasClosestByClassName(event.target, "av__cellheader");
+    if (cellHeaderElement) {
+        showHeaderCellMenu(protyle, blockElement, cellHeaderElement.parentElement);
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+    }
+
     const cellElement = hasClosestByClassName(event.target, "av__cell");
-    if (cellElement) {
-        if (cellElement.parentElement.classList.contains("av__row--header")) {
-            showHeaderCellMenu(protyle, blockElement, cellElement);
-            event.preventDefault();
-            event.stopPropagation();
-        } else {
-            popTextCell(protyle, cellElement);
-        }
+    if (cellElement && !cellElement.parentElement.classList.contains("av__row--header")) {
+        popTextCell(protyle, cellElement);
+        event.preventDefault();
+        event.stopPropagation();
         return true;
     }
     return false;
@@ -295,3 +230,25 @@ export const avContextmenu = (protyle: IProtyle, event: MouseEvent & { detail: a
     });
     return true;
 };
+
+export const updateAVName = (protyle: IProtyle, blockElement: Element) => {
+    const avId = blockElement.getAttribute("data-av-id");
+    const nameElement = blockElement.querySelector(".av__title") as HTMLElement;
+    if (nameElement.textContent.trim() === nameElement.dataset.title.trim()) {
+        return;
+    }
+    transaction(protyle, [{
+        action: "setAttrView",
+        id: avId,
+        data: {
+            name: nameElement.textContent.trim(),
+        }
+    }], [{
+        action: "setAttrView",
+        id: avId,
+        data: {
+            name: nameElement.dataset.title,
+        }
+    }])
+    nameElement.dataset.title = nameElement.textContent.trim();
+}

@@ -19,6 +19,8 @@ package model
 import (
 	"errors"
 	"fmt"
+	"github.com/jinzhu/copier"
+	"sort"
 	"strings"
 
 	"github.com/88250/gulu"
@@ -28,6 +30,7 @@ import (
 	"github.com/siyuan-note/siyuan/kernel/av"
 	"github.com/siyuan-note/siyuan/kernel/sql"
 	"github.com/siyuan-note/siyuan/kernel/treenode"
+	"github.com/siyuan-note/siyuan/kernel/util"
 )
 
 func RenderAttributeView(avID string) (ret *av.AttributeView, err error) {
@@ -39,39 +42,82 @@ func RenderAttributeView(avID string) (ret *av.AttributeView, err error) {
 		return
 	}
 
-	// TODO: render value
-	//trees := map[string]*parse.Tree{}
-	//luteEngine := util.NewLute()
-	//for _, r := range ret.Rows {
-	//	blockID := r.Cells[0].Value
-	//
-	//	bt := treenode.GetBlockTree(blockID)
-	//	if nil == bt {
-	//		err = ErrBlockNotFound
-	//		return
-	//	}
-	//
-	//	var tree *parse.Tree
-	//	if tree = trees[bt.RootID]; nil == tree {
-	//		tree, _ = filesys.LoadTree(bt.BoxID, bt.Path, luteEngine)
-	//		if nil == tree {
-	//			err = ErrTreeNotFound
-	//			return
-	//		}
-	//
-	//		trees[bt.RootID] = tree
-	//	}
-	//
-	//	node := treenode.GetNodeInTree(tree, blockID)
-	//	if nil == node {
-	//		err = ErrBlockNotFound
-	//		return
-	//	}
-	//
-	//	r.Cells[0].RenderValue = getNodeRefText(node)
-	//}
-
+	filterRows(ret)
+	sortRows(ret)
 	return
+}
+
+func filterRows(ret *av.AttributeView) {
+	if 0 < len(ret.Filters) {
+		var colIndexes []int
+		for _, f := range ret.Filters {
+			for i, c := range ret.Columns {
+				if c.ID == f.Column {
+					colIndexes = append(colIndexes, i)
+					break
+				}
+			}
+		}
+
+		var rows []*av.Row
+		for _, row := range ret.Rows {
+			pass := true
+			for j, index := range colIndexes {
+				c := ret.Columns[index]
+				if c.Type == av.ColumnTypeBlock {
+					continue
+				}
+
+				if !row.Cells[index].Value.CompareOperator(ret.Filters[j].Value, ret.Filters[j].Operator) {
+					pass = false
+					break
+				}
+			}
+			if pass {
+				rows = append(rows, row)
+			}
+		}
+		ret.Rows = rows
+	}
+}
+
+func sortRows(ret *av.AttributeView) {
+	if 0 < len(ret.Sorts) {
+		type ColIndexSort struct {
+			Index int
+			Order av.SortOrder
+		}
+
+		var colIndexSorts []*ColIndexSort
+		for _, s := range ret.Sorts {
+			for i, c := range ret.Columns {
+				if c.ID == s.Column {
+					colIndexSorts = append(colIndexSorts, &ColIndexSort{Index: i, Order: s.Order})
+					break
+				}
+			}
+		}
+
+		sort.Slice(ret.Rows, func(i, j int) bool {
+			for _, colIndexSort := range colIndexSorts {
+				c := ret.Columns[colIndexSort.Index]
+				if c.Type == av.ColumnTypeBlock {
+					continue
+				}
+
+				result := ret.Rows[i].Cells[colIndexSort.Index].Value.Compare(ret.Rows[j].Cells[colIndexSort.Index].Value)
+				if 0 == result {
+					continue
+				}
+
+				if colIndexSort.Order == av.SortOrderAsc {
+					return 0 > result
+				}
+				return 0 < result
+			}
+			return false
+		})
+	}
 }
 
 func (tx *Transaction) doUpdateAttrViewCell(operation *Operation) (ret *TxErr) {
@@ -89,8 +135,13 @@ func (tx *Transaction) doUpdateAttrViewCell(operation *Operation) (ret *TxErr) {
 			continue
 		}
 
-		blockID = row.Cells[0].Value.Block.ID
-		for _, cell := range row.Cells[1:] {
+		blockCell := row.GetBlockCell()
+		if nil == blockCell {
+			continue
+		}
+
+		blockID = blockCell.Value.Block.ID
+		for _, cell := range row.Cells {
 			if cell.ID == operation.ID {
 				c = cell
 				break
@@ -229,6 +280,38 @@ func (tx *Transaction) doSortAttrViewRow(operation *Operation) (ret *TxErr) {
 	return
 }
 
+func (tx *Transaction) doSetAttrViewColumnHidden(operation *Operation) (ret *TxErr) {
+	err := setAttributeViewColHidden(operation.Data.(bool), operation.ID, operation.ParentID)
+	if nil != err {
+		return &TxErr{code: TxErrWriteAttributeView, id: operation.ParentID, msg: err.Error()}
+	}
+	return
+}
+
+func (tx *Transaction) doSetAttrViewColumnWrap(operation *Operation) (ret *TxErr) {
+	err := setAttributeViewColWrap(operation.Data.(bool), operation.ID, operation.ParentID)
+	if nil != err {
+		return &TxErr{code: TxErrWriteAttributeView, id: operation.ParentID, msg: err.Error()}
+	}
+	return
+}
+
+func (tx *Transaction) doSetAttrViewColumnWidth(operation *Operation) (ret *TxErr) {
+	err := setAttributeViewColWidth(operation.Data.(string), operation.ID, operation.ParentID)
+	if nil != err {
+		return &TxErr{code: TxErrWriteAttributeView, id: operation.ParentID, msg: err.Error()}
+	}
+	return
+}
+
+func (tx *Transaction) doSetAttrView(operation *Operation) (ret *TxErr) {
+	err := setAttributeView(operation)
+	if nil != err {
+		return &TxErr{code: TxErrWriteAttributeView, id: operation.ParentID, msg: err.Error()}
+	}
+	return
+}
+
 func addAttributeViewColumn(name string, typ string, avID string) (err error) {
 	attrView, err := av.ParseAttributeView(avID)
 	if nil != err {
@@ -317,9 +400,7 @@ func sortAttributeViewColumn(columnID, previousColumnID, avID string) (err error
 		if column.ID == columnID {
 			col = column
 			index = i
-		}
-		if column.ID == previousColumnID {
-			previousIndex = i
+			break
 		}
 	}
 	if nil == col {
@@ -327,12 +408,18 @@ func sortAttributeViewColumn(columnID, previousColumnID, avID string) (err error
 	}
 
 	attrView.Columns = append(attrView.Columns[:index], attrView.Columns[index+1:]...)
-	attrView.Columns = append(attrView.Columns[:previousIndex], append([]*av.Column{col}, attrView.Columns[previousIndex:]...)...)
+	for i, column := range attrView.Columns {
+		if column.ID == previousColumnID {
+			previousIndex = i + 1
+			break
+		}
+	}
+	attrView.Columns = util.InsertElem(attrView.Columns, previousIndex, col)
 
 	for _, row := range attrView.Rows {
 		cel := row.Cells[index]
 		row.Cells = append(row.Cells[:index], row.Cells[index+1:]...)
-		row.Cells = append(row.Cells[:previousIndex], append([]*av.Cell{cel}, row.Cells[previousIndex:]...)...)
+		row.Cells = util.InsertElem(row.Cells, previousIndex, cel)
 	}
 
 	err = av.SaveAttributeView(attrView)
@@ -351,9 +438,7 @@ func sortAttributeViewRow(rowID, previousRowID, avID string) (err error) {
 		if r.ID == rowID {
 			row = r
 			index = i
-		}
-		if r.ID == previousRowID {
-			previousIndex = i
+			break
 		}
 	}
 	if nil == row {
@@ -361,7 +446,90 @@ func sortAttributeViewRow(rowID, previousRowID, avID string) (err error) {
 	}
 
 	attrView.Rows = append(attrView.Rows[:index], attrView.Rows[index+1:]...)
-	attrView.Rows = append(attrView.Rows[:previousIndex], append([]*av.Row{row}, attrView.Rows[previousIndex:]...)...)
+	for i, r := range attrView.Rows {
+		if r.ID == previousRowID {
+			previousIndex = i + 1
+			break
+		}
+	}
+	attrView.Rows = util.InsertElem(attrView.Rows, previousIndex, row)
+
+	err = av.SaveAttributeView(attrView)
+	return
+}
+
+func setAttributeViewColHidden(hidden bool, columnID, avID string) (err error) {
+	attrView, err := av.ParseAttributeView(avID)
+	if nil != err {
+		return
+	}
+
+	for _, column := range attrView.Columns {
+		if column.ID == columnID {
+			column.Hidden = hidden
+			break
+		}
+	}
+
+	err = av.SaveAttributeView(attrView)
+	return
+}
+
+func setAttributeViewColWrap(wrap bool, columnID, avID string) (err error) {
+	attrView, err := av.ParseAttributeView(avID)
+	if nil != err {
+		return
+	}
+
+	for _, column := range attrView.Columns {
+		if column.ID == columnID {
+			column.Wrap = wrap
+			break
+		}
+	}
+
+	err = av.SaveAttributeView(attrView)
+	return
+}
+
+func setAttributeViewColWidth(width, columnID, avID string) (err error) {
+	attrView, err := av.ParseAttributeView(avID)
+	if nil != err {
+		return
+	}
+
+	for _, column := range attrView.Columns {
+		if column.ID == columnID {
+			column.Width = width
+			break
+		}
+	}
+
+	err = av.SaveAttributeView(attrView)
+	return
+}
+
+func setAttributeView(operation *Operation) (err error) {
+	avID := operation.ID
+	attrViewMap, err := av.ParseAttributeViewMap(avID)
+	if nil != err {
+		return
+	}
+
+	operationData := operation.Data.(map[string]interface{})
+	if err = copier.Copy(&attrViewMap, operationData); nil != err {
+		return
+	}
+
+	data, err := gulu.JSON.MarshalJSON(attrViewMap)
+	if nil != err {
+		return
+	}
+
+	attrView := &av.AttributeView{}
+	if err = gulu.JSON.UnmarshalJSON(data, attrView); nil != err {
+		return
+	}
 
 	err = av.SaveAttributeView(attrView)
 	return
@@ -374,7 +542,12 @@ func removeAttributeViewBlock(blockID, avID string) (ret *av.AttributeView, err 
 	}
 
 	for i, row := range ret.Rows {
-		if row.Cells[0].Value.Block.ID == blockID {
+		blockCell := row.GetBlockCell()
+		if nil == blockCell {
+			continue
+		}
+
+		if blockCell.Value.Block.ID == blockID {
 			// 从行中移除，但是不移除属性
 			ret.Rows = append(ret.Rows[:i], ret.Rows[i+1:]...)
 			break
@@ -410,7 +583,12 @@ func addAttributeViewBlock(blockID, previousRowID, avID string, tree *parse.Tree
 
 	// 不允许重复添加相同的块到属性视图中
 	for _, row := range ret.Rows {
-		if row.Cells[0].Value.Block.ID == blockID {
+		blockCell := row.GetBlockCell()
+		if nil == blockCell {
+			continue
+		}
+
+		if blockCell.Value.Block.ID == blockID {
 			return
 		}
 	}
