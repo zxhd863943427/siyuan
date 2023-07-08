@@ -39,7 +39,21 @@ type TEventBus = "ws-main" |
     "open-menu-av" | "open-menu-content" | "open-menu-breadcrumbmore" |
     "loaded-protyle"
 type TAVCol = "text" | "date" | "number" | "relation" | "rollup" | "select" | "block" | "mSelect"
-
+type TAVFilterOperator =
+    "="
+    | "!="
+    | ">"
+    | ">="
+    | "<"
+    | "<="
+    | "Contains"
+    | "Does not contains"
+    | "Is empty"
+    | "Is not empty"
+    | "Starts with"
+    | "Ends with"
+    | "Is between"
+    | "Is relative to today"
 declare module "blueimp-md5"
 
 interface Window {
@@ -826,12 +840,20 @@ interface IBazaarItem {
 
 interface IAV {
     columns: IAVColumn[],
-    filters: [],
+    filters: IAVFilter[],
     sorts: IAVSort[],
     name: string,
     type: "table"
     rows: IAVRow[],
     id: string
+}
+
+interface IAVFilter {
+    column: string,
+    operator: TAVFilterOperator,
+    value: {
+        [key in TAVCol]?: IAVCellValue
+    },
 }
 
 interface IAVSort {
@@ -858,6 +880,16 @@ interface IAVCell {
     id: string,
     color: string,
     bgColor: string,
-    value: any,
+    value: {
+        [key in TAVCol]?: IAVCellValue
+    },
     valueType: TAVCol,
+}
+
+interface IAVCellValue {
+    content?: any
+    content2?: string
+    color?: string
+    id?: string
+    isNotEmpty?: boolean
 }
