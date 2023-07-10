@@ -167,6 +167,30 @@ func (tx *Transaction) doRemoveAttrViewBlock(operation *Operation) (ret *TxErr) 
 	return
 }
 
+func (tx *Transaction) doUpdateAttrViewColOption(operation *Operation) (ret *TxErr) {
+	err := updateAttributeViewColumnOption(operation)
+	if nil != err {
+		return &TxErr{code: TxErrWriteAttributeView, id: operation.ParentID, msg: err.Error()}
+	}
+	return
+}
+
+func (tx *Transaction) doRemoveAttrViewColOption(operation *Operation) (ret *TxErr) {
+	err := removeAttributeViewColumnOption(operation)
+	if nil != err {
+		return &TxErr{code: TxErrWriteAttributeView, id: operation.ParentID, msg: err.Error()}
+	}
+	return
+}
+
+func (tx *Transaction) doUpdateAttrViewColOptions(operation *Operation) (ret *TxErr) {
+	err := updateAttributeViewColumnOptions(operation.Data, operation.ID, operation.ParentID)
+	if nil != err {
+		return &TxErr{code: TxErrWriteAttributeView, id: operation.ParentID, msg: err.Error()}
+	}
+	return
+}
+
 func (tx *Transaction) doAddAttrViewColumn(operation *Operation) (ret *TxErr) {
 	err := addAttributeViewColumn(operation.Name, operation.Typ, operation.ParentID)
 	if nil != err {
@@ -288,6 +312,172 @@ func updateAttributeViewColumn(id, name string, typ string, avID string) (err er
 	}
 
 	err = av.SaveAttributeView(attrView)
+	return
+}
+
+func updateAttributeViewColumnOption(operation *Operation) (err error) {
+	avID := operation.ParentID
+	attrView, err := av.ParseAttributeView(avID)
+	if nil != err {
+		return
+	}
+
+	colID := operation.ID
+	data := operation.Data.(map[string]interface{})
+
+	oldName := data["oldName"].(string)
+	newName := data["newName"].(string)
+	newColor := data["newColor"].(string)
+
+	var colIndex int
+	for i, col := range attrView.Columns {
+		if col.ID != colID {
+			continue
+		}
+
+		colIndex = i
+		existOpt := false
+		for j, opt := range col.Options {
+			if opt.Name == newName {
+				existOpt = true
+				col.Options = append(col.Options[:j], col.Options[j+1:]...)
+				break
+			}
+		}
+		if !existOpt {
+			for _, opt := range col.Options {
+				if opt.Name != oldName {
+					continue
+				}
+
+				opt.Name = newName
+				opt.Color = newColor
+				break
+			}
+		}
+		break
+	}
+
+	for _, row := range attrView.Rows {
+		for i, cell := range row.Cells {
+			if colIndex != i || nil == cell.Value {
+				continue
+			}
+
+			if nil != cell.Value.Select {
+				if oldName == cell.Value.Select.Content {
+					cell.Value.Select.Content = newName
+					cell.Value.Select.Color = newColor
+					break
+				}
+			} else if nil != cell.Value.MSelect {
+				existInMSelect := false
+				for j, opt := range cell.Value.MSelect {
+					if opt.Content == newName {
+						existInMSelect = true
+						cell.Value.MSelect = append(cell.Value.MSelect[:j], cell.Value.MSelect[j+1:]...)
+						break
+					}
+				}
+				if !existInMSelect {
+					for j, opt := range cell.Value.MSelect {
+						if oldName == opt.Content {
+							cell.Value.MSelect[j].Content = newName
+							cell.Value.MSelect[j].Color = newColor
+							break
+						}
+					}
+				}
+			}
+			break
+		}
+	}
+
+	err = av.SaveAttributeView(attrView)
+	return
+}
+
+func removeAttributeViewColumnOption(operation *Operation) (err error) {
+	avID := operation.ParentID
+	attrView, err := av.ParseAttributeView(avID)
+	if nil != err {
+		return
+	}
+
+	colID := operation.ID
+	optName := operation.Data.(string)
+
+	var colIndex int
+	for i, col := range attrView.Columns {
+		if col.ID != colID {
+			continue
+		}
+
+		colIndex = i
+
+		for j, opt := range col.Options {
+			if opt.Name != optName {
+				continue
+			}
+
+			col.Options = append(col.Options[:j], col.Options[j+1:]...)
+			break
+		}
+		break
+	}
+
+	for _, row := range attrView.Rows {
+		for i, cell := range row.Cells {
+			if colIndex != i {
+				continue
+			}
+
+			if nil != cell.Value {
+				if nil != cell.Value.Select {
+					if optName == cell.Value.Select.Content {
+						cell.Value = nil
+						break
+					}
+				} else if nil != cell.Value.MSelect {
+					for j, opt := range cell.Value.MSelect {
+						if optName == opt.Content {
+							cell.Value.MSelect = append(cell.Value.MSelect[:j], cell.Value.MSelect[j+1:]...)
+							break
+						}
+					}
+				}
+			}
+			break
+		}
+	}
+
+	err = av.SaveAttributeView(attrView)
+	return
+}
+
+func updateAttributeViewColumnOptions(data interface{}, id, avID string) (err error) {
+	attrView, err := av.ParseAttributeView(avID)
+	if nil != err {
+		return
+	}
+
+	jsonData, err := gulu.JSON.MarshalJSON(data)
+	if nil != err {
+		return
+	}
+
+	options := []*av.ColumnSelectOption{}
+	if err = gulu.JSON.UnmarshalJSON(jsonData, &options); nil != err {
+		return
+	}
+
+	for _, col := range attrView.Columns {
+		if col.ID == id {
+			col.Options = options
+			err = av.SaveAttributeView(attrView)
+			return
+		}
+	}
 	return
 }
 

@@ -29,6 +29,9 @@ type TOperation =
     | "setAttrViewColHidden"
     | "setAttrViewColWrap"
     | "setAttrViewColWidth"
+    | "updateAttrViewColOptions"
+    | "removeAttrViewColOption"
+    | "updateAttrViewColOption"
     | "setAttrView"
 type TBazaarType = "templates" | "icons" | "widgets" | "themes" | "plugins"
 type TCardType = "doc" | "notebook" | "all"
@@ -506,6 +509,7 @@ interface IFileTree {
     alwaysSelectOpenedFile: boolean
     openFilesUseCurrentTab: boolean
     removeDocWithoutConfirm: boolean
+    useSingleLineSave: boolean
     allowCreateDeeper: boolean
     refCreateSavePath: string
     docCreateSavePath: string
@@ -793,7 +797,7 @@ interface IModels {
 
 interface IMenu {
     label?: string,
-    click?: (element: HTMLElement) => void,
+    click?: (element: HTMLElement) => boolean | void | Promise<boolean | void>
     type?: "separator" | "submenu" | "readonly",
     accelerator?: string,
     action?: string,
@@ -853,6 +857,8 @@ interface IAVFilter {
     operator: TAVFilterOperator,
     value: {
         [key in TAVCol]?: IAVCellValue
+    } & {
+        mSelect?: { content: string, color: string }[]
     },
 }
 
@@ -869,6 +875,11 @@ interface IAVColumn {
     wrap: boolean,
     hidden: boolean,
     type: TAVCol,
+    // 选项列表
+    options?: {
+        name: string,
+        color: string,
+    }[]
 }
 
 interface IAVRow {
@@ -882,13 +893,15 @@ interface IAVCell {
     bgColor: string,
     value: {
         [key in TAVCol]?: IAVCellValue
+    } & {
+        mSelect?: { content: string, color: string }[]
     },
     valueType: TAVCol,
 }
 
 interface IAVCellValue {
     content?: any
-    content2?: string
+    content2?: string   // 用于日期
     color?: string
     id?: string
     isNotEmpty?: boolean
