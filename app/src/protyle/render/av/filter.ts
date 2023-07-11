@@ -5,6 +5,40 @@ import {getColIconByType} from "./col";
 import {setPosition} from "../../../util/setPosition";
 import {objEquals} from "../../../util/functions";
 
+export const getCellValue = (colType: TAVCol, value: string) => {
+    let cellValue: IAVCellValue;
+    if (colType === "number") {
+        if (value) {
+            cellValue = {
+                number: {
+                    content: parseFloat(value),
+                    isNotEmpty: true
+                }
+            };
+        } else {
+            cellValue = {
+                number: {
+                    isNotEmpty: false
+                }
+            };
+        }
+    } else if (colType === "text") {
+        cellValue = {
+            text: {
+                content: value
+            }
+        };
+    } else if (colType === "mSelect" || colType === "select") {
+        cellValue = {
+            mSelect: [{
+                content: value,
+                color: ""
+            }]
+        };
+    }
+    return cellValue;
+}
+
 export const setFilter = (options: {
     filter: IAVFilter,
     protyle: IProtyle,
@@ -16,37 +50,8 @@ export const setFilter = (options: {
     const menu = new Menu("set-filter-" + options.filter.column, () => {
         const oldFilters = JSON.parse(JSON.stringify(options.data.filters));
         let hasMatch = false;
-
-        let cellValue;
-        if (colType === "number") {
-            if (textElement.value) {
-                cellValue = {
-                    number: {
-                        content: parseFloat(textElement.value),
-                        isNotEmpty: true
-                    }
-                };
-            } else {
-                cellValue = {
-                    number: {
-                        isNotEmpty: false
-                    }
-                };
-            }
-        } else if (colType === "text") {
-            cellValue = {
-                text: {
-                    content: textElement.value
-                }
-            };
-        } else if (colType === "select") {
-            cellValue = {
-                text: {
-                    content: textElement.value
-                }
-            };
-        }
-        const newFilter = {
+        const cellValue = getCellValue(colType, textElement?.value || "");
+        const newFilter: IAVFilter = {
             column: options.filter.column,
             value: cellValue,
             operator: (window.siyuan.menus.menu.element.querySelector(".b3-select") as HTMLSelectElement).value as TAVFilterOperator
@@ -64,13 +69,9 @@ export const setFilter = (options: {
                 return true;
             }
         });
-        if (isSame) {
+        if (isSame || !hasMatch) {
             return;
         }
-        if (!hasMatch) {
-            options.data.filters.push(newFilter)
-        }
-
         transaction(options.protyle, [{
             action: "setAttrView",
             id: options.data.id,
@@ -93,6 +94,7 @@ export const setFilter = (options: {
         return;
     }
     let selectHTML = "";
+    let colData: IAVColumn
     switch (colType) {
         case "text":
             selectHTML = `<option ${"=" === options.filter.operator ? "selected" : ""} value="=">${window.siyuan.languages.filterOperatorIs}</option>
@@ -116,64 +118,113 @@ export const setFilter = (options: {
 <option ${"Is not empty" === options.filter.operator ? "selected" : ""} value="Is not empty">${window.siyuan.languages.filterOperatorIsNotEmpty}</option>
 `;
             break;
-        case "select":
-            selectHTML = `<option ${"=" === options.filter.operator ? "selected" : ""} value="=">${window.siyuan.languages.filterOperatorIs}</option>
+        case "mSelect":
+            options.data.columns.find((column) => {
+                if (column.id === options.filter.column) {
+                    colData = column;
+                    if (column.type === "select") {
+                        selectHTML = `<option ${"=" === options.filter.operator ? "selected" : ""} value="=">${window.siyuan.languages.filterOperatorIs}</option>
 <option ${"!=" === options.filter.operator ? "selected" : ""} value="!=">${window.siyuan.languages.filterOperatorIsNot}</option>
 <option ${"Is empty" === options.filter.operator ? "selected" : ""} value="Is empty">${window.siyuan.languages.filterOperatorIsEmpty}</option>
 <option ${"Is not empty" === options.filter.operator ? "selected" : ""} value="Is not empty">${window.siyuan.languages.filterOperatorIsNotEmpty}</option>
 `;
-            break;
-        case "mSelect":
-            selectHTML = `<option ${"Contains" === options.filter.operator ? "selected" : ""} value="Contains">${window.siyuan.languages.filterOperatorContains}</option>
+                    } else {
+                        selectHTML = `<option ${"Contains" === options.filter.operator ? "selected" : ""} value="Contains">${window.siyuan.languages.filterOperatorContains}</option>
 <option ${"Does not contains" === options.filter.operator ? "selected" : ""} value="Does not contains">${window.siyuan.languages.filterOperatorDoesNotContain}</option>
 <option ${"Is empty" === options.filter.operator ? "selected" : ""} value="Is empty">${window.siyuan.languages.filterOperatorIsEmpty}</option>
 <option ${"Is not empty" === options.filter.operator ? "selected" : ""} value="Is not empty">${window.siyuan.languages.filterOperatorIsNotEmpty}</option>
 `;
+                    }
+                    return true;
+                }
+            });
             break;
     }
     menu.addItem({
         iconHTML: "",
         label: `<select style="margin: 4px 0" class="b3-select fn__size200">${selectHTML}</select>`
     });
-    if (colType === "select" || colType === "mSelect") {
+    if (colType === "mSelect") {
+        // TODO
+        colData.options.forEach((option) => {
+            menu.addItem({
+                label: `<input style="margin: 4px 0" value="${options.filter.value.text.content}" class="b3-text-field fn__size200">`,
+                click() {
 
+                }
+            });
+        });
     } else if (colType === "text") {
         menu.addItem({
             iconHTML: "",
-            label: `<input style="margin: 4px 0" value="${options.filter.value[colType].content}" class="b3-text-field fn__size200">`
+            label: `<input style="margin: 4px 0" value="${options.filter.value.text.content}" class="b3-text-field fn__size200">`
         });
     } else if (colType === "number") {
         menu.addItem({
             iconHTML: "",
-            label: `<input style="margin: 4px 0" value="${options.filter.value[colType].isNotEmpty ? options.filter.value[colType].content : ""}" class="b3-text-field fn__size200">`
+            label: `<input style="margin: 4px 0" value="${options.filter.value.number.isNotEmpty ? options.filter.value.number.content : ""}" class="b3-text-field fn__size200">`
         });
     }
+    menu.addItem({
+        icon: "iconTrashcan",
+        label: window.siyuan.languages.delete,
+        click() {
+            const oldFilters = Object.assign([], options.data.filters);
+            options.data.filters.find((item: IAVFilter, index: number) => {
+                if (item.column === options.filter.column) {
+                    options.data.filters.splice(index, 1);
+                    return true;
+                }
+            });
+            transaction(options.protyle, [{
+                action: "setAttrView",
+                id: options.data.id,
+                data: {
+                    filters: options.data.filters
+                }
+            }], [{
+                action: "setAttrView",
+                id: options.data.id,
+                data: {
+                    filters: oldFilters
+                }
+            }]);
+            const menuElement = hasClosestByClassName(options.target, "b3-menu");
+            if (menuElement) {
+                menuElement.innerHTML = getFiltersHTML(options.data);
+            }
+        }
+    });
     const selectElement = (window.siyuan.menus.menu.element.querySelector(".b3-select") as HTMLSelectElement);
     selectElement.addEventListener("change", () => {
         if (selectElement.value === "Is empty" || selectElement.value === "Is not empty") {
-            textElement.parentElement.parentElement.classList.add("fn__none");
+            selectElement.parentElement.parentElement.nextElementSibling.classList.add("fn__none");
         } else {
-            textElement.parentElement.parentElement.classList.remove("fn__none");
+            selectElement.parentElement.parentElement.nextElementSibling.classList.remove("fn__none");
         }
     });
-    const textElement = (window.siyuan.menus.menu.element.querySelector(".b3-text-field") as HTMLInputElement);
-    textElement.addEventListener("keydown", (event) => {
-        if (event.isComposing) {
-            event.preventDefault();
-            return;
-        }
-        if (event.key === "Enter") {
-            menu.close();
-            event.preventDefault();
-        }
-    });
+    const textElement = window.siyuan.menus.menu.element.querySelector(".b3-text-field") as HTMLInputElement;
+    if (textElement) {
+        textElement.addEventListener("keydown", (event) => {
+            if (event.isComposing) {
+                event.preventDefault();
+                return;
+            }
+            if (event.key === "Enter") {
+                menu.close();
+                event.preventDefault();
+            }
+        });
+    }
     if (selectElement.value === "Is empty" || selectElement.value === "Is not empty") {
-        textElement.parentElement.parentElement.classList.add("fn__none");
+        selectElement.parentElement.parentElement.nextElementSibling.classList.add("fn__none");
     } else {
-        textElement.parentElement.parentElement.classList.remove("fn__none");
+        selectElement.parentElement.parentElement.nextElementSibling.classList.remove("fn__none");
     }
     menu.open({x: rectTarget.left, y: rectTarget.bottom});
-    textElement.select();
+    if (textElement) {
+        textElement.select();
+    }
 };
 
 export const addFilter = (options: {
@@ -199,16 +250,11 @@ export const addFilter = (options: {
                 icon: getColIconByType(column.type),
                 click: () => {
                     const oldFilters = Object.assign([], options.data.filters);
-                    let cellValue = {};
-                    if (column.type !== "number") {
-                        cellValue = {content: ""};
-                    }
+                    const cellValue = getCellValue(column.type, "");
                     options.data.filters.push({
                         column: column.id,
                         operator: "Contains",
-                        value: {
-                            [column.type]: cellValue
-                        },
+                        value: cellValue,
                     });
                     transaction(options.protyle, [{
                         action: "setAttrView",
@@ -226,14 +272,11 @@ export const addFilter = (options: {
                     options.menuElement.innerHTML = getFiltersHTML(options.data);
                     setPosition(options.menuElement, options.tabRect.right - options.menuElement.clientWidth, options.tabRect.bottom, options.tabRect.height);
                     const filterElement = options.menuElement.querySelector(`[data-id="${column.id}"] .b3-chip`) as HTMLElement;
-                    const colType = filterElement.getAttribute("data-coltype") as TAVCol;
                     setFilter({
                         filter: {
-                            operator: filterElement.dataset.op as TAVFilterOperator,
-                            column: filterElement.parentElement.parentElement.dataset.id,
-                            value: {
-                                [colType]: {content: filterElement.dataset.value}
-                            }
+                            operator: "Contains",
+                            column: column.id,
+                            value: cellValue
                         },
                         protyle: options.protyle,
                         data: options.data,
