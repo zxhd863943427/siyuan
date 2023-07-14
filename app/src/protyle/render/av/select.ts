@@ -3,7 +3,7 @@ import {transaction} from "../../wysiwyg/transaction";
 import {hasClosestByClassName} from "../../util/hasClosest";
 import {confirmDialog} from "../../../dialog/confirmDialog";
 import {upDownHint} from "../../../util/upDownHint";
-import {genCellValue} from "./filter";
+import {genCellValue} from "./cell";
 
 const filterSelectHTML = (key: string, options: { name: string, color: string }[]) => {
     let html = "";
@@ -118,7 +118,7 @@ export const setSelectCol = (protyle: IProtyle, data: IAV, options: {
         transaction(protyle, [{
             action: "updateAttrViewColOption",
             id: colId,
-            parentID: data.id,
+            avID: data.id,
             data: {
                 newColor: color,
                 oldName: name,
@@ -127,7 +127,7 @@ export const setSelectCol = (protyle: IProtyle, data: IAV, options: {
         }], [{
             action: "updateAttrViewColOption",
             id: colId,
-            parentID: data.id,
+            avID: data.id,
             data: {
                 newColor: color,
                 oldName: inputElement.value,
@@ -238,7 +238,7 @@ export const setSelectCol = (protyle: IProtyle, data: IAV, options: {
                 transaction(protyle, [{
                     action: "updateAttrViewColOption",
                     id: colId,
-                    parentID: data.id,
+                    avID: data.id,
                     data: {
                         oldName: name,
                         newName: inputElement.value,
@@ -248,7 +248,7 @@ export const setSelectCol = (protyle: IProtyle, data: IAV, options: {
                 }], [{
                     action: "updateAttrViewColOption",
                     id: colId,
-                    parentID: data.id,
+                    avID: data.id,
                     data: {
                         oldName: inputElement.value,
                         newName: name,
@@ -355,7 +355,13 @@ export const addSelectColAndCell = (protyle: IProtyle, data: IAV, options: {
 }, currentElement: HTMLElement, menuElement: HTMLElement) => {
     const rowID = options.cellElement.parentElement.dataset.id;
     const colId = options.cellElement.dataset.colId;
-    const cellId = options.cellElement.dataset.id;
+    let cellIndex = 0;
+    Array.from(options.cellElement.parentElement.querySelectorAll(".av__cell")).find((item: HTMLElement, index) => {
+        if (item.dataset.id === options.cellElement.dataset.id) {
+            cellIndex = index;
+            return true;
+        }
+    })
     let colData: IAVColumn;
     data.view.columns.find((item: IAVColumn) => {
         if (item.id === colId) {
@@ -369,26 +375,26 @@ export const addSelectColAndCell = (protyle: IProtyle, data: IAV, options: {
     let cellData: IAVCell;
     data.view.rows.find(row => {
         if (row.id === rowID) {
-            row.cells.find(cell => {
-                if (cell.id === cellId) {
-                    cellData = cell;
-                    if (!cellData.value.mSelect) {
-                        cellData.value.mSelect = [];
-                    }
-                    return true;
-                }
-            });
+            cellData = row.cells[cellIndex];
+            // 为空时 cellId 每次请求都不一致
+            cellData.id = options.cellElement.dataset.id;
+            if (!cellData.value) {
+                cellData.value = {mSelect:[]} as IAVCellValue;
+            }
             return true;
         }
     });
-    if (!cellData) {
-        cellData = {
-            color: "",
-            bgColor: "",
-            id: Lute.NewNodeID(),
-            value: genCellValue(colData.type, ""),
-            valueType: colData.type
+
+    let hasSelected = false;
+    cellData.value.mSelect.find((item) => {
+        if (item.content === currentElement.dataset.name) {
+            hasSelected = true;
+            return true;
         }
+    });
+    if (hasSelected) {
+        menuElement.querySelector("input").focus();
+        return;
     }
 
     const oldValue = Object.assign([], cellData.value.mSelect);
@@ -416,7 +422,7 @@ export const addSelectColAndCell = (protyle: IProtyle, data: IAV, options: {
             data: colData.options
         }, {
             action: "updateAttrViewCell",
-            id: cellId,
+            id: cellData.id,
             keyID: colId,
             rowID,
             avID: data.id,
@@ -430,14 +436,14 @@ export const addSelectColAndCell = (protyle: IProtyle, data: IAV, options: {
     } else {
         transaction(protyle, [{
             action: "updateAttrViewCell",
-            id: cellId,
+            id: cellData.id,
             keyID: colId,
             rowID,
             avID: data.id,
             data: cellData.value
         }], [{
             action: "updateAttrViewCell",
-            id: cellId,
+            id: cellData.id,
             keyID: colId,
             rowID,
             avID: data.id,
@@ -448,6 +454,10 @@ export const addSelectColAndCell = (protyle: IProtyle, data: IAV, options: {
     }
     if (colData.type === "select") {
         menuElement.parentElement.remove();
+    } else {
+        menuElement.innerHTML = getSelectHTML(data.view, options);
+        bindSelectEvent(protyle, data, menuElement, options);
+        menuElement.querySelector("input").focus();
     }
 };
 

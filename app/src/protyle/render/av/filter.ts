@@ -4,71 +4,32 @@ import {hasClosestByClassName} from "../../util/hasClosest";
 import {getColIconByType} from "./col";
 import {setPosition} from "../../../util/setPosition";
 import {objEquals} from "../../../util/functions";
+import {genCellValue} from "./cell";
 
-export const genCellValue = (colType: TAVCol, value: string | {
-    content: string,
-    color: string
-}[]) => {
-    let cellValue: IAVCellValue;
-    if (typeof value === "string") {
-        if (colType === "number") {
-            if (value) {
-                cellValue = {
-                    type: colType,
-                    number: {
-                        content: parseFloat(value),
-                        isNotEmpty: true
-                    }
-                };
-            } else {
-                cellValue = {
-                    type: colType,
-                    number: {
-                        isNotEmpty: false
-                    }
-                };
-            }
-        } else if (colType === "text") {
-            cellValue = {
-                type: colType,
-                text: {
-                    content: value
-                }
-            };
-        } else if (colType === "mSelect" || colType === "select") {
-            return cellValue = {
-                type: colType,
-                mSelect: [{
-                    content: value,
-                    color: ""
-                }]
-            };
-        }
-        return cellValue;
+export const getDefaultOperatorByType = (type: TAVCol) => {
+    if (type === "number" || type === "select") {
+        return "=";
     }
-    if (colType === "mSelect" || colType === "select") {
-        return cellValue = {
-            type: colType,
-            mSelect: value
-        };
+    if (type === "text" || type === "mSelect") {
+        return "Contains";
     }
 };
 
 const toggleEmpty = (element: HTMLElement, show: boolean) => {
-    const menuElement = hasClosestByClassName(element, "b3-menu")
+    const menuElement = hasClosestByClassName(element, "b3-menu");
     if (menuElement) {
         menuElement.querySelectorAll("input, .b3-chip").forEach(inputElement => {
-            const menuItemElement = hasClosestByClassName(inputElement, "b3-menu__item")
+            const menuItemElement = hasClosestByClassName(inputElement, "b3-menu__item");
             if (menuItemElement) {
                 if (show) {
-                    menuItemElement.classList.remove("fn__none")
+                    menuItemElement.classList.remove("fn__none");
                 } else {
-                    menuItemElement.classList.add("fn__none")
+                    menuItemElement.classList.add("fn__none");
                 }
             }
-        })
+        });
     }
-}
+};
 
 export const setFilter = (options: {
     filter: IAVFilter,
@@ -84,16 +45,19 @@ export const setFilter = (options: {
         if (textElement) {
             cellValue = genCellValue(options.filter.value.type, textElement.value);
         } else {
-            const mSelect: { color: string, content: string }[] = []
-            window.siyuan.menus.menu.element.querySelectorAll('svg').forEach(item => {
+            const mSelect: { color: string, content: string }[] = [];
+            window.siyuan.menus.menu.element.querySelectorAll("svg").forEach(item => {
                 if (item.firstElementChild.getAttribute("xlink:href") === "#iconCheck") {
-                    const chipElement = item.nextElementSibling.firstElementChild as HTMLElement
+                    const chipElement = item.nextElementSibling.firstElementChild as HTMLElement;
                     mSelect.push({
                         color: chipElement.dataset.color,
                         content: chipElement.dataset.name
-                    })
+                    });
                 }
-            })
+            });
+            if (mSelect.length === 0) {
+                mSelect.push({color: "", content: ""});
+            }
             cellValue = genCellValue(options.filter.value.type, mSelect);
         }
         const newFilter: IAVFilter = {
@@ -187,13 +151,13 @@ export const setFilter = (options: {
         label: `<select style="margin: 4px 0" class="b3-select fn__size200">${selectHTML}</select>`
     });
     if (options.filter.value.type === "select" || options.filter.value.type === "mSelect") {
-        colData.options.forEach((option) => {
-            let icon = "iconUncheck"
+        colData.options?.forEach((option) => {
+            let icon = "iconUncheck";
             options.filter.value.mSelect.find((optionItem) => {
                 if (optionItem.content === option.name) {
-                    icon = "iconCheck"
+                    icon = "iconCheck";
                 }
-            })
+            });
             menu.addItem({
                 icon,
                 label: `<span class="b3-chip b3-chip--middle" data-name="${option.name}" data-color="${option.color}" style="margin:3px 0;background-color:var(--b3-font-background${option.color});color:var(--b3-font-color${option.color})">
@@ -201,15 +165,15 @@ export const setFilter = (options: {
 </span>`,
                 bind(element) {
                     element.addEventListener("click", () => {
-                        const useElement = element.querySelector("use")
+                        const useElement = element.querySelector("use");
                         if (useElement.getAttribute("xlink:href") === "#iconUncheck") {
                             useElement.setAttribute("xlink:href", "#iconCheck");
                         } else {
                             useElement.setAttribute("xlink:href", "#iconUncheck");
                         }
-                    })
+                    });
                 }
-            })
+            });
         });
     } else if (options.filter.value.type === "text") {
         menu.addItem({
@@ -250,7 +214,7 @@ export const setFilter = (options: {
     });
     const selectElement = (window.siyuan.menus.menu.element.querySelector(".b3-select") as HTMLSelectElement);
     selectElement.addEventListener("change", () => {
-        toggleEmpty(selectElement, selectElement.value !== "Is empty" && selectElement.value !== "Is not empty")
+        toggleEmpty(selectElement, selectElement.value !== "Is empty" && selectElement.value !== "Is not empty");
     });
     const textElement = window.siyuan.menus.menu.element.querySelector(".b3-text-field") as HTMLInputElement;
     if (textElement) {
@@ -265,7 +229,7 @@ export const setFilter = (options: {
             }
         });
     }
-    toggleEmpty(selectElement, selectElement.value !== "Is empty" && selectElement.value !== "Is not empty")
+    toggleEmpty(selectElement, selectElement.value !== "Is empty" && selectElement.value !== "Is not empty");
     menu.open({x: rectTarget.left, y: rectTarget.bottom});
     if (textElement) {
         textElement.select();
@@ -298,7 +262,7 @@ export const addFilter = (options: {
                     const cellValue = genCellValue(column.type, "");
                     options.data.view.filters.push({
                         column: column.id,
-                        operator: "Contains",
+                        operator: getDefaultOperatorByType(column.type),
                         value: cellValue,
                     });
                     transaction(options.protyle, [{
@@ -315,7 +279,7 @@ export const addFilter = (options: {
                     const filterElement = options.menuElement.querySelector(`[data-id="${column.id}"] .b3-chip`) as HTMLElement;
                     setFilter({
                         filter: {
-                            operator: "Contains",
+                            operator:  getDefaultOperatorByType(column.type),
                             column: column.id,
                             value: cellValue
                         },
