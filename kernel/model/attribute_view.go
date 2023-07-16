@@ -89,10 +89,11 @@ func renderAttributeViewTable(attrView *av.AttributeView, view *av.View) (ret *a
 			Name:    key.Name,
 			Type:    key.Type,
 			Icon:    key.Icon,
+			Options: key.Options,
 			Wrap:    col.Wrap,
 			Hidden:  col.Hidden,
 			Width:   col.Width,
-			Options: key.Options,
+			Calc:    col.Calc,
 		})
 	}
 
@@ -101,6 +102,16 @@ func renderAttributeViewTable(attrView *av.AttributeView, view *av.View) (ret *a
 		for _, val := range keyValues.Values {
 			rows[val.BlockID] = append(rows[val.BlockID], val)
 		}
+	}
+
+	notFound := []string{}
+	for blockID, _ := range rows {
+		if treenode.GetBlockTree(blockID) == nil {
+			notFound = append(notFound, blockID)
+		}
+	}
+	for _, blockID := range notFound {
+		delete(rows, blockID)
 	}
 
 	for rowID, row := range rows {
@@ -251,6 +262,50 @@ func setAttributeViewSorts(operation *Operation) (err error) {
 	case av.LayoutTypeTable:
 		if err = gulu.JSON.UnmarshalJSON(data, &view.Table.Sorts); nil != err {
 			return
+		}
+	}
+
+	err = av.SaveAttributeView(attrView)
+	return
+}
+
+func (tx *Transaction) doSetAttrViewColCalc(operation *Operation) (ret *TxErr) {
+	err := setAttributeViewColumnCalc(operation)
+	if nil != err {
+		return &TxErr{code: TxErrWriteAttributeView, id: operation.AvID, msg: err.Error()}
+	}
+	return
+}
+
+func setAttributeViewColumnCalc(operation *Operation) (err error) {
+	attrView, err := av.ParseAttributeView(operation.AvID)
+	if nil != err {
+		return
+	}
+
+	view, err := attrView.GetView()
+	if nil != err {
+		return
+	}
+
+	operationData := operation.Data.(interface{})
+	data, err := gulu.JSON.MarshalJSON(operationData)
+	if nil != err {
+		return
+	}
+
+	calc := &av.ColumnCalc{}
+	switch view.LayoutType {
+	case av.LayoutTypeTable:
+		if err = gulu.JSON.UnmarshalJSON(data, calc); nil != err {
+			return
+		}
+
+		for _, column := range view.Table.Columns {
+			if column.ID == operation.ID {
+				column.Calc = calc
+				break
+			}
 		}
 	}
 
