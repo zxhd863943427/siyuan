@@ -11,43 +11,43 @@ export const getCalcValue = (column: IAVColumn) => {
     let value = "";
     switch (column.calc.operator) {
         case "Count all":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultCountAll}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultCountAll}`;
             break;
         case "Count values":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultCountValues}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultCountValues}`;
             break;
         case "Count unique values":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultCountUniqueValues}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultCountUniqueValues}`;
             break;
         case "Count empty":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultCountEmpty}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultCountEmpty}`;
             break;
         case "Count not empty":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultCountNotEmpty}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultCountNotEmpty}`;
             break;
         case "Percent empty":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultPercentEmpty}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultPercentEmpty}`;
             break;
         case "Percent not empty":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultPercentNotEmpty}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultPercentNotEmpty}`;
             break;
         case "Sum":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultSum}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultSum}`;
             break;
         case  "Average":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultAverage}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultAverage}`;
             break;
         case  "Median":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultMedian}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultMedian}`;
             break;
         case  "Min":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultMin}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultMin}`;
             break;
         case  "Max":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultMax}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultMax}`;
             break;
         case  "Range":
-            value = `<span>${resultCalc.content}</span>${window.siyuan.languages.calcResultRange}`;
+            value = `<span>${resultCalc.formattedContent}</span>${window.siyuan.languages.calcResultRange}`;
             break;
     }
     return value;
@@ -339,11 +339,17 @@ const updateCellValue = (protyle: IProtyle, cellElement: HTMLElement, type: TAVC
     const cellId = cellElement.getAttribute("data-id");
     const colId = cellElement.getAttribute("data-col-id");
     const avID = blockElement.getAttribute("data-av-id");
-    let inputValue: string | number = (avMaskElement.querySelector(".b3-text-field") as HTMLInputElement).value;
-    let oldValue: string | number = cellElement.textContent.trim();
+    const inputValue: { content: string | number, isNotEmpty?: boolean } = {
+        content: (avMaskElement.querySelector(".b3-text-field") as HTMLInputElement).value
+    };
+    const oldValue: { content: string | number, isNotEmpty?: boolean } = {
+        content: cellElement.textContent.trim()
+    };
     if (type === "number") {
-        inputValue = parseFloat(inputValue);
-        oldValue = parseFloat(oldValue);
+        oldValue.content = parseFloat(oldValue.content as string);
+        oldValue.isNotEmpty = !!oldValue.content
+        inputValue.content = parseFloat(inputValue.content as string);
+        inputValue.isNotEmpty = !!inputValue.content
     }
     transaction(protyle, [{
         action: "updateAttrViewCell",
@@ -352,7 +358,7 @@ const updateCellValue = (protyle: IProtyle, cellElement: HTMLElement, type: TAVC
         keyID: colId,
         rowID,
         data: {
-            [type]: {content: inputValue}
+            [type]: inputValue
         }
     }], [{
         action: "updateAttrViewCell",
@@ -361,7 +367,7 @@ const updateCellValue = (protyle: IProtyle, cellElement: HTMLElement, type: TAVC
         keyID: colId,
         rowID,
         data: {
-            [type]: {content: oldValue}
+            [type]: oldValue
         }
     }]);
     setTimeout(() => {

@@ -108,6 +108,8 @@
         flex-direction: row-reverse;
         box-sizing: border-box;
         opacity: 0;
+        line-height: 26px;
+        overflow: hidden;
 
         &.av__calc--ashow {
           opacity: 1;
@@ -183,7 +185,7 @@
     overflow: hidden;
 
     .b3-chip {
-      margin: 2px;
+      margin: 1px 2px;
     }
   }
 

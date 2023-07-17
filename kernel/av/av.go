@@ -19,8 +19,12 @@ package av
 
 import (
 	"errors"
+	"fmt"
+	"math"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/88250/gulu"
 	"github.com/88250/lute/ast"
@@ -112,8 +116,69 @@ type ValueText struct {
 }
 
 type ValueNumber struct {
-	Content    float64 `json:"content"`
-	IsNotEmpty bool    `json:"isNotEmpty"`
+	Content          float64      `json:"content"`
+	IsNotEmpty       bool         `json:"isNotEmpty"`
+	Format           NumberFormat `json:"format"`
+	FormattedContent string       `json:"formattedContent"`
+}
+
+type NumberFormat string
+
+const (
+	NumberFormatNone    NumberFormat = ""
+	NumberFormatPercent NumberFormat = "percent"
+)
+
+func NewValueNumber(content float64) *ValueNumber {
+	return &ValueNumber{
+		Content:          content,
+		IsNotEmpty:       true,
+		Format:           NumberFormatNone,
+		FormattedContent: fmt.Sprintf("%f", content),
+	}
+}
+
+func NewFormattedValueNumber(content float64, format NumberFormat) (ret *ValueNumber) {
+	ret = &ValueNumber{
+		Content:          content,
+		IsNotEmpty:       true,
+		Format:           format,
+		FormattedContent: fmt.Sprintf("%f", content),
+	}
+	switch format {
+	case NumberFormatNone:
+		s := fmt.Sprintf("%.5f", content)
+		ret.FormattedContent = strings.TrimRight(strings.TrimRight(s, "0"), ".")
+	case NumberFormatPercent:
+		s := fmt.Sprintf("%.2f", content*100)
+		ret.FormattedContent = strings.TrimRight(strings.TrimRight(s, "0"), ".") + "%"
+	}
+	return
+}
+
+func (number *ValueNumber) FormatNumber() {
+	switch number.Format {
+	case NumberFormatNone:
+		number.FormattedContent = strconv.FormatFloat(number.Content, 'f', -1, 64)
+	case NumberFormatPercent:
+		s := fmt.Sprintf("%.2f", number.Content*100)
+		number.FormattedContent = strings.TrimRight(strings.TrimRight(s, "0"), ".") + "%"
+	}
+}
+
+// RoundUp rounds like 12.3416 -> 12.35
+func RoundUp(val float64, precision int) float64 {
+	return math.Ceil(val*(math.Pow10(precision))) / math.Pow10(precision)
+}
+
+// RoundDown rounds like 12.3496 -> 12.34
+func RoundDown(val float64, precision int) float64 {
+	return math.Floor(val*(math.Pow10(precision))) / math.Pow10(precision)
+}
+
+// Round rounds to nearest like 12.3456 -> 12.35
+func Round(val float64, precision int) float64 {
+	return math.Round(val*(math.Pow10(precision))) / math.Pow10(precision)
 }
 
 type ValueDate struct {

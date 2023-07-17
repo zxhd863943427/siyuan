@@ -180,13 +180,6 @@ export const avContextmenu = (protyle: IProtyle, event: MouseEvent & { detail: a
             rowElement.remove();
         }
     });
-    menu.addItem({
-        icon: "iconCopy",
-        label: window.siyuan.languages.duplicate,
-        click() {
-
-        }
-    });
     if (rowIds.length === 1) {
         menu.addSeparator();
         openEditorTab(protyle.app, rowIds[0]);
@@ -208,11 +201,12 @@ export const avContextmenu = (protyle: IProtyle, event: MouseEvent & { detail: a
         });
     }
     const editAttrSubmenu: IMenu[] = [];
-    rowElement.parentElement.querySelectorAll(".av__row--header .av__cell").forEach((cellElement) => {
+    rowElement.parentElement.querySelectorAll(".av__row--header .av__cell").forEach((cellElement: HTMLElement) => {
         editAttrSubmenu.push({
             icon: getColIconByType(cellElement.getAttribute("data-dtype") as TAVCol),
             label: cellElement.textContent.trim(),
             click() {
+                popTextCell(protyle, rowElement.querySelector(`.av__cell[data-col-id="${cellElement.dataset.colId}"]`));
             }
         });
     });
@@ -221,13 +215,6 @@ export const avContextmenu = (protyle: IProtyle, event: MouseEvent & { detail: a
         label: window.siyuan.languages.attr,
         type: "submenu",
         submenu: editAttrSubmenu
-    });
-    menu.addItem({
-        icon: "iconMove",
-        label: window.siyuan.languages.move,
-        click() {
-
-        }
     });
     if (protyle?.app?.plugins) {
         emitOpenMenu({
@@ -256,7 +243,7 @@ export const updateAVName = (protyle: IProtyle, blockElement: Element) => {
     transaction(protyle, [{
         action: "setAttrViewName",
         id: avId,
-        data:  nameElement.textContent.trim(),
+        data: nameElement.textContent.trim(),
     }], [{
         action: "setAttrViewName",
         id: avId,
