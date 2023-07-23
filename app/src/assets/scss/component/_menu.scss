@@ -53,6 +53,7 @@
         box-shadow: none;
         border: 0;
         padding: 24px 0;
+        border-radius: 0;
 
         & > .b3-menu__item:first-child {
           border-top: .5px solid var(--b3-theme-background-light);
@@ -110,13 +111,13 @@
 
       &__label {
         font-size: 17px;
+        overflow: auto;
       }
 
       &__icon {
         height: 17px;
         width: 17px;
         margin: 0 16px 0 8px;
-        border-radius: var(--b3-border-radius);
 
         &--arrow {
           width: 12px;

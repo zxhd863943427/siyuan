@@ -292,8 +292,10 @@ export const popTextCell = (protyle: IProtyle, cellElements: HTMLElement[]) => {
     } else if (type === "number") {
         html = `<input type="number" value="${cellElements[0].textContent}" ${style} class="b3-text-field">`;
     } else if (["select", "mSelect"].includes(type) && blockElement) {
-        // TODO
-        openMenuPanel(protyle, blockElement, "select", {cellElement: cellElements[0]});
+        openMenuPanel({protyle, blockElement, type: "select", cellElements});
+        return;
+    } else if (type === "date" && blockElement) {
+        openMenuPanel({protyle, blockElement, type: "date", cellElements});
         return;
     }
     window.siyuan.menus.menu.remove();
@@ -332,9 +334,9 @@ const updateCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElem
         return;
     }
 
-    const avMaskElement = document.querySelector(".av__mask")
-    const doOperations: IOperation[] = []
-    const undoOperations: IOperation[] = []
+    const avMaskElement = document.querySelector(".av__mask");
+    const doOperations: IOperation[] = [];
+    const undoOperations: IOperation[] = [];
     const avID = blockElement.getAttribute("data-av-id");
     cellElements.forEach((item) => {
         const rowElement = hasClosestByClassName(item, "av__row");
@@ -365,7 +367,7 @@ const updateCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElem
             data: {
                 [type]: inputValue
             }
-        })
+        });
         undoOperations.push({
             action: "updateAttrViewCell",
             id: cellId,
@@ -375,8 +377,8 @@ const updateCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElem
             data: {
                 [type]: oldValue
             }
-        })
-    })
+        });
+    });
     transaction(protyle, doOperations, undoOperations);
     setTimeout(() => {
         avMaskElement.remove();
