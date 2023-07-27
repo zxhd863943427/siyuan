@@ -192,10 +192,10 @@ func (value *Value) CompareOperator(other *Value, operator FilterOperator) bool 
 		case FilterOperatorIsLessOrEqual:
 			return value.Date.Content <= other.Date.Content
 		case FilterOperatorIsBetween:
-			start := value.Date.Content <= other.Date.Content
-			end := true
+			start := value.Date.Content >= other.Date.Content
+			end := value.Date.Content <= other.Date.Content2
 			if value.Date.HasEndDate {
-				end = value.Date.Content2 >= other.Date.Content2
+				end = value.Date.Content2 <= other.Date.Content2
 			}
 			return start && end
 		case FilterOperatorIsEmpty:
