@@ -95,6 +95,34 @@
     --b3-font-background12: #803a06;
     --b3-font-background13: var(--b3-theme-on-background);
 
+    /* 属性视图颜色 */
+    --b3-av-color1: var(--b3-font-color1);
+    --b3-av-color2: var(--b3-font-color2);
+    --b3-av-color3: var(--b3-font-color3);
+    --b3-av-color4: var(--b3-font-color4);
+    --b3-av-color5: var(--b3-font-color5);
+    --b3-av-color6: var(--b3-font-color6);
+    --b3-av-color7: var(--b3-font-color7);
+    --b3-av-color8: var(--b3-font-color8);
+    --b3-av-color9: var(--b3-font-color9);
+    --b3-av-color10: var(--b3-font-color10);
+    --b3-av-color11: var(--b3-font-color11);
+    --b3-av-color12: var(--b3-font-color12);
+    --b3-av-color13: var(--b3-font-color13);
+    --b3-av-background1: var(--b3-font-background1);
+    --b3-av-background2: var(--b3-font-background2);
+    --b3-av-background3: var(--b3-font-background3);
+    --b3-av-background4: var(--b3-font-background4);
+    --b3-av-background5: var(--b3-font-background5);
+    --b3-av-background6: var(--b3-font-background6);
+    --b3-av-background7: var(--b3-font-background7);
+    --b3-av-background8: var(--b3-font-background8);
+    --b3-av-background9: var(--b3-font-background9);
+    --b3-av-background10: var(--b3-font-background10);
+    --b3-av-background11: var(--b3-font-background11);
+    --b3-av-background12: var(--b3-font-background12);
+    --b3-av-background13: var(--b3-font-background13);
+
     /* 动画效果 */
     --b3-transition: all .2s cubic-bezier(0, 0, .2, 1) 0ms;
     --b3-width-transition: width .2s cubic-bezier(0, 0, .2, 1) 0ms;
