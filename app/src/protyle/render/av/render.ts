@@ -70,7 +70,7 @@ style="width: ${column.width || "200px"}">${getCalcValue(column) || '<svg><use x
                             text = `<span class="av__celltext">${cell.value?.number.content || ""}</span>`;
                         } else if (cell.valueType === "mSelect" || cell.valueType === "select") {
                             cell.value?.mSelect?.forEach((item: { content: string, color: string }) => {
-                                text += `<span class="b3-chip b3-chip--middle" style="background-color:var(--b3-font-background${item.color});color:var(--b3-font-color${item.color})">${item.content}</span>`;
+                                text += `<span class="b3-chip b3-chip--middle" style="background-color:var(--b3-av-background${item.color});color:var(--b3-av-color${item.color})">${item.content}</span>`;
                             });
                             if (!text) {
                                 text = '<span class="av__celltext"></span>';
