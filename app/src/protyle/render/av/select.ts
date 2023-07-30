@@ -16,7 +16,7 @@ const filterSelectHTML = (key: string, options: { name: string, color: string }[
                 html += `<button data-type="addColOptionOrCell" class="b3-menu__item${html ? "" : " b3-menu__item--current"}" draggable="true" data-name="${item.name}" data-color="${item.color}">
     <svg class="b3-menu__icon"><use xlink:href="#iconDrag"></use></svg>
     <div class="fn__flex-1">
-        <span class="b3-chip" style="background-color:var(--b3-font-background${item.color});color:var(--b3-font-color${item.color})">
+        <span class="b3-chip" style="background-color:var(--b3-av-background${item.color});color:var(--b3-av-color${item.color})">
             <span class="fn__ellipsis">${item.name}</span>
         </span>
     </div>
@@ -33,7 +33,7 @@ const filterSelectHTML = (key: string, options: { name: string, color: string }[
         html = `<button data-type="addColOptionOrCell" class="b3-menu__item${html ? "" : " b3-menu__item--current"}" data-name="${key}" data-color="${colorIndex}">
 <svg class="b3-menu__icon"><use xlink:href="#iconAdd"></use></svg>
 <div class="fn__flex-1">
-    <span class="b3-chip" style="background-color:var(--b3-font-background${colorIndex});color:var(--b3-font-color${colorIndex})">
+    <span class="b3-chip" style="background-color:var(--b3-av-background${colorIndex});color:var(--b3-av-color${colorIndex})">
         <span class="fn__ellipsis">${key}</span>
     </span>
 </div>
@@ -234,7 +234,7 @@ export const setColOption = (protyle: IProtyle, data: IAV, target: HTMLElement, 
         menu.addItem({
             accelerator: parseInt(color) === index + 1 ? '<svg class="svg" style="height: 30px; float: left;"><use xlink:href="#iconSelect"></use></svg>' : undefined,
             iconHTML: "",
-            label: `<span class="color__square"  style="padding: 5px;margin: 2px;color: var(--b3-font-color${index + 1});background-color: var(--b3-font-background${index + 1});">A</span>`,
+            label: `<span class="color__square"  style="padding: 5px;margin: 2px;color: var(--b3-av-color${index + 1});background-color: var(--b3-av-background${index + 1});">A</span>`,
             click(element) {
                 if (element.lastElementChild.classList.contains("b3-menu__accelerator")) {
                     return;
@@ -528,7 +528,7 @@ export const getSelectHTML = (data: IAVTable, cellElements: HTMLElement[]) => {
             }
         });
         if (everyRowHas && selectedHTML.indexOf(`data-content="${unique.content}"`) === -1) {
-            selectedHTML += `<div class="b3-chip b3-chip--middle" data-content="${unique.content}" style="background-color:var(--b3-font-background${unique.color});color:var(--b3-font-color${unique.color})">${unique.content}<svg class="b3-chip__close" data-type="removeCellOption"><use xlink:href="#iconCloseRound"></use></svg></div>`;
+            selectedHTML += `<div class="b3-chip b3-chip--middle" data-content="${unique.content}" style="background-color:var(--b3-av-background${unique.color});color:var(--b3-av-color${unique.color})">${unique.content}<svg class="b3-chip__close" data-type="removeCellOption"><use xlink:href="#iconCloseRound"></use></svg></div>`;
         }
     });
 
