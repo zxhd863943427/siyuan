@@ -103,6 +103,14 @@ func RenderAttributeView(avID, nodeID string) (viewable av.Viewable, attrView *a
 		return
 	}
 
+	if "" == attrView.NodeID {
+		attrView.NodeID = nodeID
+		if err = av.SaveAttributeView(attrView); nil != err {
+			logging.LogErrorf("save attribute view [%s] failed: %s", avID, err)
+			return
+		}
+	}
+
 	if 1 > len(attrView.Views) {
 		err = av.ErrViewNotFound
 		return
@@ -378,14 +386,13 @@ func setAttributeViewColumnCalc(operation *Operation) (err error) {
 }
 
 func (tx *Transaction) doInsertAttrViewBlock(operation *Operation) (ret *TxErr) {
-	firstSrcID := operation.SrcIDs[0]
-	tree, err := tx.loadTree(firstSrcID)
-	if nil != err {
-		logging.LogErrorf("load tree [%s] failed: %s", firstSrcID, err)
-		return &TxErr{code: TxErrCodeBlockNotFound, id: firstSrcID, msg: err.Error()}
-	}
-
 	for _, id := range operation.SrcIDs {
+		tree, err := tx.loadTree(id)
+		if nil != err {
+			logging.LogErrorf("load tree [%s] failed: %s", id, err)
+			return &TxErr{code: TxErrCodeBlockNotFound, id: id, msg: err.Error()}
+		}
+
 		var avErr error
 		if avErr = addAttributeViewBlock(id, operation, tree, tx); nil != avErr {
 			return &TxErr{code: TxErrWriteAttributeView, id: operation.AvID, msg: avErr.Error()}
@@ -809,19 +816,24 @@ func (tx *Transaction) doUpdateAttrViewCell(operation *Operation) (ret *TxErr) {
 }
 
 func updateAttributeViewCell(operation *Operation, tx *Transaction) (err error) {
-	attrView, err := av.ParseAttributeView(operation.AvID)
+	err = UpdateAttributeViewCell(operation.AvID, operation.KeyID, operation.RowID, operation.ID, operation.Data)
+	return
+}
+
+func UpdateAttributeViewCell(avID, keyID, rowID, cellID string, valueData interface{}) (err error) {
+	attrView, err := av.ParseAttributeView(avID)
 	if nil != err {
 		return
 	}
 
 	var val *av.Value
 	for _, keyValues := range attrView.KeyValues {
-		if operation.KeyID != keyValues.Key.ID {
+		if keyID != keyValues.Key.ID {
 			continue
 		}
 
 		for _, value := range keyValues.Values {
-			if operation.ID == value.ID {
+			if cellID == value.ID {
 				val = value
 				val.Type = keyValues.Key.Type
 				break
@@ -829,13 +841,13 @@ func updateAttributeViewCell(operation *Operation, tx *Transaction) (err error) 
 		}
 
 		if nil == val {
-			val = &av.Value{ID: operation.ID, KeyID: keyValues.Key.ID, BlockID: operation.RowID, Type: keyValues.Key.Type}
+			val = &av.Value{ID: cellID, KeyID: keyValues.Key.ID, BlockID: rowID, Type: keyValues.Key.Type}
 			keyValues.Values = append(keyValues.Values, val)
 		}
 		break
 	}
 
-	tree, err := tx.loadTree(val.BlockID)
+	tree, err := loadTreeByBlockID(val.BlockID)
 	if nil != err {
 		return
 	}
@@ -845,7 +857,7 @@ func updateAttributeViewCell(operation *Operation, tx *Transaction) (err error) 
 		return
 	}
 
-	data, err := gulu.JSON.MarshalJSON(operation.Data)
+	data, err := gulu.JSON.MarshalJSON(valueData)
 	if nil != err {
 		return
 	}
@@ -854,8 +866,9 @@ func updateAttributeViewCell(operation *Operation, tx *Transaction) (err error) 
 	}
 
 	attrs := parse.IAL2Map(node.KramdownIAL)
-	attrs[NodeAttrNamePrefixAvKey+operation.AvID+"-"+val.KeyID] = val.ToJSONString()
-	if err = setNodeAttrsWithTx(tx, node, tree, attrs); nil != err {
+	attrs[NodeAttrNamePrefixAvKey+avID+"-"+val.KeyID] = val.ToJSONString()
+
+	if err = setNodeAttrs(node, tree, attrs); nil != err {
 		return
 	}
 

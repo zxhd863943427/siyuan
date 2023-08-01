@@ -3,6 +3,9 @@ import {getColIconByType, showColMenu} from "./col";
 import {Constants} from "../../../constants";
 import {getCalcValue} from "./cell";
 import * as dayjs from "dayjs";
+import {hasClosestByAttribute} from "../../util/hasClosest";
+import {Menu} from "../../../plugin/Menu";
+import {escapeAttr} from "../../../util/escape";
 
 export const avRender = (element: Element, cb?: () => void) => {
     let avElements: Element[] = [];
@@ -20,7 +23,10 @@ export const avRender = (element: Element, cb?: () => void) => {
             if (e.getAttribute("data-render") === "true") {
                 return;
             }
-            fetchPost("/api/av/renderAttributeView", {id: e.getAttribute("data-av-id"), nodeID: e.getAttribute("data-node-id")}, (response) => {
+            fetchPost("/api/av/renderAttributeView", {
+                id: e.getAttribute("data-av-id"),
+                nodeID: e.getAttribute("data-node-id")
+            }, (response) => {
                 const data = response.data.view as IAVTable;
                 // header
                 let tableHTML = '<div class="av__row av__row--header"><div class="av__firstcol"><svg style="height: 32px"><use xlink:href="#iconUncheck"></use></svg></div>';
@@ -87,8 +93,8 @@ style="width: ${column.width || "200px"}">${getCalcValue(column) || '<svg><use x
                             if (cell.value?.date.content) {
                                 text += dayjs(cell.value.date.content).format("YYYY-MM-DD HH:mm");
                             }
-                            if (cell.value?.date.hasEndDate) {
-                                text += `<svg style="margin-left: 5px"><use xlink:href="#iconForward"></use></svg>${dayjs(cell.value.date.content2).format("YYYY-MM-DD HH:mm")}</span>`;
+                            if (cell.value?.date.hasEndDate && cell.value?.date.content && cell.value?.date.content2) {
+                                text += `<svg style="margin-left: 5px"><use xlink:href="#iconForward"></use></svg>${dayjs(cell.value.date.content2).format("YYYY-MM-DD HH:mm")}`;
                             }
                             text += "</span>";
                         }
@@ -215,10 +221,11 @@ const genAVValueHTML = (value: IAVCellValue) => {
             });
             break;
         case "date":
-            html = `<input value="${dayjs(value.date.content).format("YYYY-MM-DD HH:mm")}" type="datetime-local" class="b3-text-field b3-text-field--text fn__flex-1">`;
-            if (value.date.hasEndDate) {
-                html += `<span class="fn__space"></span>
-<input value="${dayjs(value.date.content2).format("YYYY-MM-DD HH:mm")}" type="datetime-local" class="b3-text-field b3-text-field--text fn__flex-1">`;
+            if (value.date.content) {
+                html = `<span data-content="${value.date.content}">${dayjs(value.date.content).format("YYYY-MM-DD HH:mm")}</span>`;
+            }
+            if (value.date.hasEndDate && value.date.content && value.date.content2) {
+                html += `<svg class="custom-attr__avarrow"><use xlink:href="#iconForward"></use></svg><span data-content="${value.date.content2}">${dayjs(value.date.content2).format("YYYY-MM-DD HH:mm")}</span>`;
             }
             break;
         case "url":
@@ -235,10 +242,12 @@ export const renderAVAttribute = (element: HTMLElement, id: string) => {
             keyValues: {
                 key: {
                     type: TAVCol,
-                    name: string
+                    name: string,
+                    options?: { name: string, color: string }[]
                 },
-                values: IAVCellValue[]
+                values: { keyID: string, id: string, blockID: string, type?: TAVCol & IAVCellValue }  []
             }[],
+            avID: string
             avName: string
         }) => {
             html += `<div class="block__logo custom-attr__avheader">
@@ -251,12 +260,203 @@ export const renderAVAttribute = (element: HTMLElement, id: string) => {
         <svg><use xlink:href="#${getColIconByType(item.key.type)}"></use></svg>
         <span>${item.key.name}</span>
     </div>
-    <div class="fn__flex-1 fn__flex">
+    <div data-av-id="${table.avID}" data-key-id="${item.values[0].keyID}" data-block-id="${item.values[0].blockID}" data-id="${item.values[0].id}" data-type="${item.values[0].type}" 
+data-options="${item.key?.options ? escapeAttr(JSON.stringify(item.key.options)) : "[]"}"
+class="fn__flex-1 fn__flex${["url", "text", "number"].includes(item.values[0].type) ? "" : " custom-attr__avvalue"}">
         ${genAVValueHTML(item.values[0])}
     </div>
 </div>`;
             });
         });
         element.innerHTML = html;
+        element.addEventListener("click", (event) => {
+            const target = event.target as HTMLElement;
+            const dateElement = hasClosestByAttribute(target, "data-type", "date");
+            if (dateElement) {
+                const dateMenu = new Menu("custom-attr-av-date", () => {
+                    const textElements = window.siyuan.menus.menu.element.querySelectorAll(".b3-text-field") as NodeListOf<HTMLInputElement>;
+                    const hasEndDate = (window.siyuan.menus.menu.element.querySelector(".b3-switch") as HTMLInputElement).checked;
+                    fetchPost("/api/av/setAttributeViewBlockAttr", {
+                        avID: dateElement.dataset.avId,
+                        keyID: dateElement.dataset.keyId,
+                        rowID: dateElement.dataset.blockId,
+                        cellID: dateElement.dataset.id,
+                        value: {
+                            date: {
+                                content: new Date(textElements[0].value).getTime(),
+                                content2: new Date(textElements[1].value).getTime(),
+                                hasEndDate
+                            }
+                        }
+                    });
+                    let dataHTML = "";
+                    if (textElements[0].value) {
+                        dataHTML = `<span data-content="${new Date(textElements[0].value).getTime()}">${dayjs(textElements[0].value).format("YYYY-MM-DD HH:mm")}</span>`;
+                    }
+                    if (hasEndDate && textElements[0].value && textElements[1].value) {
+                        dataHTML += `<svg class="custom-attr__avarrow"><use xlink:href="#iconForward"></use></svg><span data-content="${new Date(textElements[1].value).getTime()}">${dayjs(textElements[1].value).format("YYYY-MM-DD HH:mm")}</span>`;
+                    }
+                    dateElement.innerHTML = dataHTML;
+                });
+                if (dateMenu.isOpen) {
+                    return;
+                }
+                const hasEndDate = dateElement.querySelector("svg");
+                const timeElements = dateElement.querySelectorAll("span");
+                dateMenu.addItem({
+                    iconHTML: "",
+                    label: `<input value="${timeElements[0] ? dayjs(parseInt(timeElements[0].dataset.content)).format("YYYY-MM-DDTHH:mm") : ""}" type="datetime-local" class="b3-text-field fn__size200" style="margin: 4px 0">`
+                });
+                dateMenu.addItem({
+                    iconHTML: "",
+                    label: `<input value="${timeElements[1] ? dayjs(parseInt(timeElements[1].dataset.content)).format("YYYY-MM-DDTHH:mm") : ""}" type="datetime-local" class="b3-text-field fn__size200${hasEndDate ? "" : " fn__none"}" style="margin: 4px 0">`
+                });
+                dateMenu.addSeparator();
+                dateMenu.addItem({
+                    iconHTML: "",
+                    label: `<label class="fn__flex">
+    <span>${window.siyuan.languages.endDate}</span>
+    <span class="fn__space fn__flex-1"></span>
+    <input type="checkbox" class="b3-switch fn__flex-center"${hasEndDate ? " checked" : ""}>
+</label>`,
+                    click(element, event) {
+                        const switchElement = element.querySelector(".b3-switch") as HTMLInputElement;
+                        if ((event.target as HTMLElement).tagName !== "INPUT") {
+                            switchElement.checked = !switchElement.checked;
+                        } else {
+                            switchElement.outerHTML = `<input type="checkbox" class="b3-switch fn__flex-center"${switchElement.checked ? " checked" : ""}>`;
+                        }
+                        window.siyuan.menus.menu.element.querySelectorAll('[type="datetime-local"]')[1].classList.toggle("fn__none");
+                        return true;
+                    }
+                });
+                dateMenu.addSeparator();
+                dateMenu.addItem({
+                    icon: "iconTrashcan",
+                    label: window.siyuan.languages.clear,
+                    click() {
+                        const textElements = window.siyuan.menus.menu.element.querySelectorAll(".b3-text-field") as NodeListOf<HTMLInputElement>;
+                        textElements[0].value = "";
+                        textElements[1].value = "";
+                        (window.siyuan.menus.menu.element.querySelector(".b3-switch") as HTMLInputElement).checked = false;
+                    }
+                });
+                const datetRect = dateElement.getBoundingClientRect();
+                dateMenu.open({
+                    x: datetRect.left,
+                    y: datetRect.bottom
+                });
+                window.siyuan.menus.menu.element.style.zIndex = "400";
+                event.stopPropagation();
+                event.preventDefault();
+                return;
+            }
+            const mSelectElement = hasClosestByAttribute(target, "data-type", "select") || hasClosestByAttribute(target, "data-type", "mSelect");
+            if (mSelectElement) {
+                const mSelectMenu = new Menu("custom-attr-av-select", () => {
+                    const mSelect: { content: string, color: string }[] = [];
+                    let mSelectHTML = "";
+                    window.siyuan.menus.menu.element.querySelectorAll(".svg").forEach(item => {
+                        const chipElement = item.parentElement.previousElementSibling.firstElementChild as HTMLElement;
+                        const content = chipElement.textContent.trim();
+                        const color = chipElement.dataset.color;
+                        mSelect.push({
+                            content,
+                            color
+                        });
+                        mSelectHTML += `<span class="b3-chip b3-chip--middle" style="background-color:var(--b3-font-background${color});color:var(--b3-font-color${color})">${content}</span>`;
+                    });
+                    fetchPost("/api/av/setAttributeViewBlockAttr", {
+                        avID: mSelectElement.dataset.avId,
+                        keyID: mSelectElement.dataset.keyId,
+                        rowID: mSelectElement.dataset.blockId,
+                        cellID: mSelectElement.dataset.id,
+                        value: {
+                            mSelect
+                        }
+                    });
+                    mSelectElement.innerHTML = mSelectHTML;
+                });
+                if (mSelectMenu.isOpen) {
+                    return;
+                }
+                const names: string[] = [];
+                mSelectElement.querySelectorAll(".b3-chip").forEach(item => {
+                    names.push(item.textContent.trim());
+                });
+                JSON.parse(mSelectElement.dataset.options || "").forEach((item: { name: string, color: string }) => {
+                    mSelectMenu.addItem({
+                        iconHTML: "",
+                        label: `<span class="b3-chip" data-color="${item.color}" style="height:24px;background-color:var(--b3-font-background${item.color});color:var(--b3-font-color${item.color})">
+    <span class="fn__ellipsis">${item.name}</span>
+</span>`,
+                        accelerator: names.includes(item.name) ? '<svg class="svg" style="height: 30px; float: left;"><use xlink:href="#iconSelect"></use></svg>' : Constants.ZWSP,
+                        click(element) {
+                            const acceleratorElement = element.querySelector(".b3-menu__accelerator");
+                            if (mSelectElement.dataset.type === "select") {
+                                window.siyuan.menus.menu.element.querySelectorAll(".b3-menu__accelerator").forEach(itemElement => {
+                                    if (itemElement.isSameNode(acceleratorElement)) {
+                                        if (acceleratorElement.querySelector("svg")) {
+                                            acceleratorElement.innerHTML = "";
+                                        } else {
+                                            acceleratorElement.innerHTML = '<svg class="svg" style="height: 30px; float: left;"><use xlink:href="#iconSelect"></use></svg>';
+                                        }
+                                    } else {
+                                        itemElement.innerHTML = "";
+                                    }
+                                });
+                                return false;
+                            }
+                            if (acceleratorElement.querySelector("svg")) {
+                                acceleratorElement.innerHTML = "";
+                            } else {
+                                acceleratorElement.innerHTML = '<svg class="svg" style="height: 30px; float: left;"><use xlink:href="#iconSelect"></use></svg>';
+                            }
+                            return true;
+                        }
+                    });
+                });
+                const mSelecttRect = mSelectElement.getBoundingClientRect();
+                mSelectMenu.open({
+                    x: mSelecttRect.left,
+                    y: mSelecttRect.bottom
+                });
+                window.siyuan.menus.menu.element.style.zIndex = "400";
+                event.stopPropagation();
+                event.preventDefault();
+                return;
+            }
+        });
+        element.querySelectorAll(".b3-text-field--text").forEach((item: HTMLInputElement) => {
+            item.addEventListener("change", () => {
+                let value;
+                if (item.parentElement.dataset.type === "url") {
+                    value = {
+                        url: {
+                            content: item.value
+                        }
+                    };
+                } else if (item.parentElement.dataset.type === "text") {
+                    value = {
+                        text: {
+                            content: item.value
+                        }
+                    };
+                } else if (item.parentElement.dataset.type === "number") {
+                    value = {
+                        number: {
+                            content: parseFloat(item.value)
+                        }
+                    };
+                }
+                fetchPost("/api/av/setAttributeViewBlockAttr", {
+                    avID: item.parentElement.dataset.avId,
+                    keyID: item.parentElement.dataset.keyId,
+                    rowID: item.parentElement.dataset.blockId,
+                    cellID: item.parentElement.dataset.id,
+                    value
+                });
+            });
+        });
     });
 };
