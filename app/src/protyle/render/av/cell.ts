@@ -369,6 +369,9 @@ export const popTextCell = (protyle: IProtyle, cellElements: HTMLElement[]) => {
         inputElement.addEventListener("blur", () => {
             updateCellValue(protyle, type, cellElements);
         });
+        inputElement.addEventListener("input", () => {
+            updateCellValue(protyle, type, cellElements);
+        });
         inputElement.addEventListener("keydown", (event) => {
             if (event.isComposing) {
                 return;
