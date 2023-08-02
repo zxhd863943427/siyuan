@@ -135,7 +135,7 @@ ${html}
 
 export const bindEditEvent = (options: { protyle: IProtyle, data: IAV, menuElement: HTMLElement }) => {
     const avID = options.data.id;
-    const colId = options.menuElement.firstElementChild.getAttribute("data-col-id");
+    const colId = options.menuElement.querySelector(".b3-menu__item").getAttribute("data-col-id");
     const colData = options.data.view.columns.find((item: IAVColumn) => item.id === colId);
     const nameElement = options.menuElement.querySelector('[data-type="name"]') as HTMLInputElement;
     nameElement.addEventListener("blur", () => {
@@ -163,6 +163,9 @@ export const bindEditEvent = (options: { protyle: IProtyle, data: IAV, menuEleme
             return;
         }
         if (event.key === "Escape") {
+            options.menuElement.parentElement.remove();
+        } else if (event.key === "Enter") {
+            nameElement.dispatchEvent(new CustomEvent("blur"));
             options.menuElement.parentElement.remove();
         }
     });
@@ -285,6 +288,16 @@ export const showColMenu = (protyle: IProtyle, blockElement: HTMLElement, cellEl
     menu.addItem({
         icon: getColIconByType(type),
         label: `<input style="margin: 4px 0" class="b3-text-field" type="text" value="${cellElement.innerText.trim()}">`,
+        bind(element) {
+            element.querySelector("input").addEventListener("keydown", (event: KeyboardEvent) => {
+                if (event.isComposing) {
+                    return;
+                }
+                if (event.key === "Enter") {
+                    menu.close();
+                }
+            });
+        }
     });
     if (type !== "block") {
         menu.addItem({

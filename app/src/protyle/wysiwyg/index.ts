@@ -1235,6 +1235,9 @@ export class WYSIWYG {
 
         let beforeContextmenuRange: Range;
         this.element.addEventListener("contextmenu", (event: MouseEvent & { detail: any }) => {
+            if (event.shiftKey) {
+                return;
+            }
             event.stopPropagation();
             event.preventDefault();
             const x = event.clientX || event.detail.x;
@@ -1929,7 +1932,7 @@ export class WYSIWYG {
                         }
                         hideElements(["gutter"], protyle);
                     } else if (event.shiftKey) {
-                        openAttr(actionElement.parentElement, protyle);
+                        openAttr(actionElement.parentElement);
                     } else if (ctrlIsPressed) {
                         zoomOut({protyle, id: actionElement.parentElement.getAttribute("data-node-id")});
                     } else {
