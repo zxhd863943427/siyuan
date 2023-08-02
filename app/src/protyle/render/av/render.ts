@@ -23,6 +23,7 @@ export const avRender = (element: Element, cb?: () => void) => {
             if (e.getAttribute("data-render") === "true") {
                 return;
             }
+            const left = e.querySelector(".av__scroll")?.scrollLeft || 0;
             fetchPost("/api/av/renderAttributeView", {
                 id: e.getAttribute("data-av-id"),
                 nodeID: e.getAttribute("data-node-id")
@@ -90,10 +91,10 @@ style="width: ${column.width || "200px"}">${getCalcValue(column) || '<svg><use x
                             }
                         } else if (cell.valueType === "date") {
                             text = '<span class="av__celltext">';
-                            if (cell.value?.date.content) {
+                            if (cell.value?.date.isNotEmpty) {
                                 text += dayjs(cell.value.date.content).format("YYYY-MM-DD HH:mm");
                             }
-                            if (cell.value?.date.hasEndDate && cell.value?.date.content && cell.value?.date.content2) {
+                            if (cell.value?.date.hasEndDate && cell.value?.date.isNotEmpty && cell.value?.date.isNotEmpty2) {
                                 text += `<svg style="margin-left: 5px"><use xlink:href="#iconForward"></use></svg>${dayjs(cell.value.date.content2).format("YYYY-MM-DD HH:mm")}`;
                             }
                             text += "</span>";
@@ -151,6 +152,7 @@ ${cell.color ? `color:${cell.color};` : ""}">${text}</div>`;
     </div>
 </div>`;
                 e.setAttribute("data-render", "true");
+                e.querySelector(".av__scroll").scrollLeft = left;
                 if (cb) {
                     cb();
                 }
@@ -221,10 +223,10 @@ const genAVValueHTML = (value: IAVCellValue) => {
             });
             break;
         case "date":
-            if (value.date.content) {
+            if (value.date.isNotEmpty) {
                 html = `<span data-content="${value.date.content}">${dayjs(value.date.content).format("YYYY-MM-DD HH:mm")}</span>`;
             }
-            if (value.date.hasEndDate && value.date.content && value.date.content2) {
+            if (value.date.hasEndDate && value.date.isNotEmpty2 && value.date.isNotEmpty) {
                 html += `<svg class="custom-attr__avarrow"><use xlink:href="#iconForward"></use></svg><span data-content="${value.date.content2}">${dayjs(value.date.content2).format("YYYY-MM-DD HH:mm")}</span>`;
             }
             break;
@@ -283,6 +285,8 @@ class="fn__flex-1 fn__flex${["url", "text", "number"].includes(item.values[0].ty
                         cellID: dateElement.dataset.id,
                         value: {
                             date: {
+                                isNotEmpty: textElements[0].value !== "",
+                                isNotEmpty2: textElements[1].value !== "",
                                 content: new Date(textElements[0].value).getTime(),
                                 content2: new Date(textElements[1].value).getTime(),
                                 hasEndDate
@@ -290,10 +294,10 @@ class="fn__flex-1 fn__flex${["url", "text", "number"].includes(item.values[0].ty
                         }
                     });
                     let dataHTML = "";
-                    if (textElements[0].value) {
+                    if (textElements[0].value !== "") {
                         dataHTML = `<span data-content="${new Date(textElements[0].value).getTime()}">${dayjs(textElements[0].value).format("YYYY-MM-DD HH:mm")}</span>`;
                     }
-                    if (hasEndDate && textElements[0].value && textElements[1].value) {
+                    if (hasEndDate && textElements[0].value !== "" && textElements[1].value !== "") {
                         dataHTML += `<svg class="custom-attr__avarrow"><use xlink:href="#iconForward"></use></svg><span data-content="${new Date(textElements[1].value).getTime()}">${dayjs(textElements[1].value).format("YYYY-MM-DD HH:mm")}</span>`;
                     }
                     dateElement.innerHTML = dataHTML;
