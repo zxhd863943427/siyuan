@@ -443,6 +443,6 @@ const updateCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElem
     });
     transaction(protyle, doOperations, undoOperations);
     setTimeout(() => {
-        avMaskElement.remove();
+        // avMaskElement.remove();
     });
 };
