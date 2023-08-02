@@ -388,6 +388,7 @@ export const popTextCell = (protyle: IProtyle, cellElements: HTMLElement[]) => {
 };
 
 const updateCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElement[]) => {
+    const avMaskElement = document.querySelector(".av__mask");
     dynamicSetCellValue(protyle, type, cellElements);
     setTimeout(() => {
         avMaskElement.remove();
@@ -428,6 +429,8 @@ const dynamicSetCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTML
             case "text":
                 value = {text:inputValue}
                 break
+            case "block":
+                value = {block:inputValue}
         }
         
         fetchPost("/api/av/setAttributeViewBlockAttr", {
