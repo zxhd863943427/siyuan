@@ -378,6 +378,7 @@ export const popTextCell = (protyle: IProtyle, cellElements: HTMLElement[]) => {
             }
             if (event.key === "Escape" || event.key === "Enter") {
                 updateCellValue(protyle, type, cellElements);
+                avMaskElement?.remove();
                 event.preventDefault();
                 event.stopPropagation();
             }
@@ -391,6 +392,8 @@ export const popTextCell = (protyle: IProtyle, cellElements: HTMLElement[]) => {
 };
 
 const updateCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElement[]) => {
+    cellElements = cellElements.map(item=>{
+        return protyle.element.querySelector(`[data-id="${item.getAttribute("data-id")}"]`)})
     const blockElement = hasClosestBlock(cellElements[0]);
     if (!blockElement) {
         return;
