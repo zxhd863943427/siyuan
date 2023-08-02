@@ -490,7 +490,7 @@ const dynamicSetCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTML
             keyID: colId,
             rowID: rowID,
             cellID: cellId,
-            inputValue
+            value: value
         });
     });
 };
