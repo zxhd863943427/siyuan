@@ -369,9 +369,6 @@ export const popTextCell = (protyle: IProtyle, cellElements: HTMLElement[]) => {
         inputElement.addEventListener("blur", () => {
             updateCellValue(protyle, type, cellElements);
         });
-        inputElement.addEventListener("input", () => {
-            dynamicSetCellValue(protyle, type, cellElements);
-        });
         inputElement.addEventListener("keydown", (event) => {
             if (event.isComposing) {
                 return;
@@ -391,59 +388,7 @@ export const popTextCell = (protyle: IProtyle, cellElements: HTMLElement[]) => {
 };
 
 const updateCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElement[]) => {
-    cellElements = cellElements.map((item)=>{
-        return protyle.element.querySelector(`[data-id="${item.getAttribute("data-id")}"]`)})
-    const blockElement = hasClosestBlock(cellElements[0]);
-    if (!blockElement) {
-        return;
-    }
-
-    const avMaskElement = document.querySelector(".av__mask");
-    const doOperations: IOperation[] = [];
-    const undoOperations: IOperation[] = [];
-    const avID = blockElement.getAttribute("data-av-id");
-    cellElements.forEach((item) => {
-        const rowElement = hasClosestByClassName(item, "av__row");
-        if (!rowElement) {
-            return;
-        }
-        const rowID = rowElement.getAttribute("data-id");
-        const cellId = item.getAttribute("data-id");
-        const colId = item.getAttribute("data-col-id");
-        const inputValue: { content: string | number, isNotEmpty?: boolean } = {
-            content: (avMaskElement.querySelector(".b3-text-field") as HTMLInputElement).value
-        };
-        const oldValue: { content: string | number, isNotEmpty?: boolean } = {
-            content: item.textContent.trim()
-        };
-        if (type === "number") {
-            oldValue.content = parseFloat(oldValue.content as string);
-            oldValue.isNotEmpty = !!oldValue.content;
-            inputValue.content = parseFloat(inputValue.content as string);
-            inputValue.isNotEmpty = !!inputValue.content;
-        }
-        doOperations.push({
-            action: "updateAttrViewCell",
-            id: cellId,
-            avID,
-            keyID: colId,
-            rowID,
-            data: {
-                [type]: inputValue
-            }
-        });
-        undoOperations.push({
-            action: "updateAttrViewCell",
-            id: cellId,
-            avID,
-            keyID: colId,
-            rowID,
-            data: {
-                [type]: oldValue
-            }
-        });
-    });
-    transaction(protyle, doOperations, undoOperations);
+    dynamicSetCellValue(protyle, type, cellElements);
     setTimeout(() => {
         avMaskElement.remove();
     });
