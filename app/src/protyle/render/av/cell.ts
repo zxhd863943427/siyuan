@@ -1,5 +1,6 @@
 import {transaction} from "../../wysiwyg/transaction";
 import {hasClosestBlock, hasClosestByClassName} from "../../util/hasClosest";
+import {fetchPost} from "../../../util/fetch";
 import {openMenuPanel} from "./openMenuPanel";
 import {Menu} from "../../../plugin/Menu";
 
