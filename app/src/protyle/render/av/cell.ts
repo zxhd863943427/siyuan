@@ -366,6 +366,9 @@ export const popTextCell = (protyle: IProtyle, cellElements: HTMLElement[]) => {
         inputElement.addEventListener("blur", () => {
             updateCellValue(protyle, type, cellElements);
         });
+        inputElement.addEventListener("input", () => {
+            dynamicSetCellValue(protyle, type, cellElements);
+        });
         inputElement.addEventListener("keydown", (event) => {
             if (event.isComposing) {
                 return;
@@ -438,5 +441,44 @@ const updateCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElem
     transaction(protyle, doOperations, undoOperations);
     setTimeout(() => {
         avMaskElement.remove();
+    });
+};
+const dynamicSetCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElement[]) => {
+    const blockElement = hasClosestBlock(cellElements[0]);
+    if (!blockElement) {
+        return;
+    }
+
+    const avMaskElement = document.querySelector(".av__mask");
+    const doOperations: IOperation[] = [];
+    const undoOperations: IOperation[] = [];
+    const avID = blockElement.getAttribute("data-av-id");
+    cellElements.forEach((item) => {
+        const rowElement = hasClosestByClassName(item, "av__row");
+        if (!rowElement) {
+            return;
+        }
+        const rowID = rowElement.getAttribute("data-id");
+        const cellId = item.getAttribute("data-id");
+        const colId = item.getAttribute("data-col-id");
+        const inputValue: { content: string | number, isNotEmpty?: boolean } = {
+            content: (avMaskElement.querySelector(".b3-text-field") as HTMLInputElement).value
+        };
+        const oldValue: { content: string | number, isNotEmpty?: boolean } = {
+            content: item.textContent.trim()
+        };
+        if (type === "number") {
+            oldValue.content = parseFloat(oldValue.content as string);
+            oldValue.isNotEmpty = !!oldValue.content;
+            inputValue.content = parseFloat(inputValue.content as string);
+            inputValue.isNotEmpty = !!inputValue.content;
+        }
+        fetchPost("/api/av/setAttributeViewBlockAttr", {
+            avID: avID,
+            keyID: colId,
+            rowID: rowID,
+            cellID: cellId,
+            value
+        });
     });
 };
