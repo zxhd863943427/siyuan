@@ -391,6 +391,8 @@ export const popTextCell = (protyle: IProtyle, cellElements: HTMLElement[]) => {
 };
 
 const updateCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElement[]) => {
+    cellElements = cellElements.map((item)=>{
+        return protyle.element.querySelector(`[data-id="${item.getAttribute("data-id")}"]`)})
     const blockElement = hasClosestBlock(cellElements[0]);
     if (!blockElement) {
         return;
@@ -466,18 +468,23 @@ const dynamicSetCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTML
         const rowID = rowElement.getAttribute("data-id");
         const cellId = item.getAttribute("data-id");
         const colId = item.getAttribute("data-col-id");
-        const inputValue: { content: string | number, isNotEmpty?: boolean } = {
+        const inputValue: { content: string | number} = {
             content: (avMaskElement.querySelector(".b3-text-field") as HTMLInputElement).value
         };
-        const oldValue: { content: string | number, isNotEmpty?: boolean } = {
-            content: item.textContent.trim()
-        };
-        if (type === "number") {
-            oldValue.content = parseFloat(oldValue.content as string);
-            oldValue.isNotEmpty = !!oldValue.content;
-            inputValue.content = parseFloat(inputValue.content as string);
-            inputValue.isNotEmpty = !!inputValue.content;
+        let value;
+        switch(type){
+            case "number":
+                inputValue.content = parseFloat(inputValue.content as string);
+                value = {number:inputValue}
+                break
+            case "url":
+                value = {url:inputValue}
+                break
+            case "text":
+                value = {text:inputValue}
+                break
         }
+        
         fetchPost("/api/av/setAttributeViewBlockAttr", {
             avID: avID,
             keyID: colId,
