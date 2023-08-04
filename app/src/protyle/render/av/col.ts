@@ -5,6 +5,7 @@ import {fetchPost} from "../../../util/fetch";
 import {getDefaultOperatorByType, setFilter} from "./filter";
 import {genCellValue} from "./cell";
 import {openMenuPanel} from "./openMenuPanel";
+import {getLabelByNumberFormat} from "./number";
 
 export const duplicateCol = (options: {
     protyle: IProtyle,
@@ -114,6 +115,14 @@ export const getEditHTML = (options: {
     <svg class="b3-menu__action" data-type="setColOption"><use xlink:href="#iconEdit"></use></svg>
 </button>`;
         });
+    }
+    if (colData.type === "number") {
+        html += `<button class="b3-menu__separator"></button>
+<button class="b3-menu__item" data-type="numberFormat" data-format="${colData.numberFormat}">
+    <svg class="b3-menu__icon"><use xlink:href="#iconFormat"></use></svg>
+    <span class="b3-menu__label">${window.siyuan.languages.format}</span>
+    <span class="b3-menu__accelerator">${getLabelByNumberFormat(colData.numberFormat)}</span>
+</button>`;
     }
     return `<div class="b3-menu__items">
 ${html}
@@ -229,6 +238,10 @@ export const getColIconByType = (type: TAVCol) => {
             return "iconCalendar";
         case "url":
             return "iconLink";
+        case "email":
+            return "iconEmail";
+        case "phone":
+            return "iconPhone";
     }
 };
 
