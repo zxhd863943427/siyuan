@@ -68,10 +68,10 @@ style="width: ${column.width || "200px"}">${getCalcValue(column) || '<svg><use x
                         let text = "";
                         if (cell.valueType === "text") {
                             text = `<span class="av__celltext">${cell.value?.text.content || ""}</span>`;
-                        } else if (cell.valueType === "url") {
-                            text = `<span class="av__celltext av__celltext--url">${cell.value?.url.content || ""}</span>`;
-                            if (cell.value?.url.content) {
-                                text += `<span class="b3-chip b3-chip--info b3-chip--small" data-type="a" data-href="${cell.value.url.content}">${window.siyuan.languages.openBy}</span>`;
+                        } else if (["url", "email", "phone"].includes(cell.valueType)) {
+                            text = `<span class="av__celltext av__celltext--url" data-type="${cell.valueType}">${cell.value ? cell.value[cell.valueType as "url"].content : ""}</span>`;
+                            if (cell.value && cell.value[cell.valueType as "url"].content) {
+                                text += `<span data-type="copy" class="b3-tooltips b3-tooltips__n block__icon" aria-label="${window.siyuan.languages.copy}"><svg><use xlink:href="#iconCopy"></use></svg></span>`;
                             }
                         } else if (cell.valueType === "block") {
                             text = `<span class="av__celltext">${cell.value?.block.content || ""}</span>`;
@@ -79,7 +79,7 @@ style="width: ${column.width || "200px"}">${getCalcValue(column) || '<svg><use x
                                 text += `<span class="b3-chip b3-chip--info b3-chip--small" data-type="block-ref" data-id="${cell.value.block.id}" data-subtype="s">${window.siyuan.languages.openBy}</span>`;
                             }
                         } else if (cell.valueType === "number") {
-                            text = `<span class="av__celltext">${cell.value?.number.content || ""}</span>`;
+                            text = `<span class="av__celltext" data-content="${cell.value?.number.content || ""}">${cell.value?.number.formattedContent || ""}</span>`;
                         } else if (cell.valueType === "mSelect" || cell.valueType === "select") {
                             cell.value?.mSelect?.forEach((item: { content: string, color: string }) => {
                                 text += `<span class="b3-chip b3-chip--middle" style="background-color:var(--b3-av-background${item.color});color:var(--b3-av-color${item.color})">${item.content}</span>`;
@@ -90,12 +90,12 @@ style="width: ${column.width || "200px"}">${getCalcValue(column) || '<svg><use x
                                 text = `<span class="av__celltext">${text}</span>`;
                             }
                         } else if (cell.valueType === "date") {
-                            text = '<span class="av__celltext">';
+                            text = '<span class="av__celltext av__celltext--date">';
                             if (cell.value?.date.isNotEmpty) {
                                 text += dayjs(cell.value.date.content).format("YYYY-MM-DD HH:mm");
                             }
                             if (cell.value?.date.hasEndDate && cell.value?.date.isNotEmpty && cell.value?.date.isNotEmpty2) {
-                                text += `<svg style="margin-left: 5px"><use xlink:href="#iconForward"></use></svg>${dayjs(cell.value.date.content2).format("YYYY-MM-DD HH:mm")}`;
+                                text += `<svg><use xlink:href="#iconForward"></use></svg>${dayjs(cell.value.date.content2).format("YYYY-MM-DD HH:mm")}`;
                             }
                             text += "</span>";
                         }
@@ -104,6 +104,7 @@ ${cell.valueType === "block" ? 'data-block-id="' + (cell.value.block.id || "") +
 style="width: ${data.columns[index].width || "200px"};
 ${cell.bgColor ? `background-color:${cell.bgColor};` : ""}
 ${data.columns[index].wrap ? "" : "white-space: nowrap;"}
+${cell.valueType !== "number" ? "" : "flex-direction: row-reverse;"}
 ${cell.color ? `color:${cell.color};` : ""}">${text}</div>`;
                     });
                     tableHTML += "<div></div></div>";
@@ -235,6 +236,16 @@ const genAVValueHTML = (value: IAVCellValue) => {
 <span class="fn__space"></span>
 <a href="${value.url.content}" target="_blank" aria-label="${window.siyuan.languages.openBy}" class="block__icon block__icon--show fn__flex-center b3-tooltips__w b3-tooltips"><svg><use xlink:href="#iconLink"></use></svg></a>`;
             break;
+        case "phone":
+            html = `<input value="${value.phone.content}" class="b3-text-field b3-text-field--text fn__flex-1">
+<span class="fn__space"></span>
+<a href="tel:${value.phone.content}" target="_blank" aria-label="${window.siyuan.languages.openBy}" class="block__icon block__icon--show fn__flex-center b3-tooltips__w b3-tooltips"><svg><use xlink:href="#iconPhone"></use></svg></a>`;
+            break;
+        case "email":
+            html = `<input value="${value.email.content}" class="b3-text-field b3-text-field--text fn__flex-1">
+<span class="fn__space"></span>
+<a href="mailto:${value.email.content}" target="_blank" aria-label="${window.siyuan.languages.openBy}" class="block__icon block__icon--show fn__flex-center b3-tooltips__w b3-tooltips"><svg><use xlink:href="#iconEmail"></use></svg></a>`;
+            break;
     }
     return html;
 };
@@ -266,7 +277,7 @@ export const renderAVAttribute = (element: HTMLElement, id: string) => {
     </div>
     <div data-av-id="${table.avID}" data-key-id="${item.values[0].keyID}" data-block-id="${item.values[0].blockID}" data-id="${item.values[0].id}" data-type="${item.values[0].type}" 
 data-options="${item.key?.options ? escapeAttr(JSON.stringify(item.key.options)) : "[]"}"
-class="fn__flex-1 fn__flex${["url", "text", "number"].includes(item.values[0].type) ? "" : " custom-attr__avvalue"}">
+class="fn__flex-1 fn__flex${["url", "text", "number", "email", "phone"].includes(item.values[0].type) ? "" : " custom-attr__avvalue"}">
         ${genAVValueHTML(item.values[0])}
     </div>
 </div>`;
@@ -436,15 +447,9 @@ class="fn__flex-1 fn__flex${["url", "text", "number"].includes(item.values[0].ty
         element.querySelectorAll(".b3-text-field--text").forEach((item: HTMLInputElement) => {
             item.addEventListener("change", () => {
                 let value;
-                if (item.parentElement.dataset.type === "url") {
+                if (["url", "text", "email", "phone"].includes(item.parentElement.dataset.type)) {
                     value = {
-                        url: {
-                            content: item.value
-                        }
-                    };
-                } else if (item.parentElement.dataset.type === "text") {
-                    value = {
-                        text: {
+                        [item.parentElement.dataset.type]: {
                             content: item.value
                         }
                     };
