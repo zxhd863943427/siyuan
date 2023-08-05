@@ -432,6 +432,12 @@ const dynamicSetCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTML
             case "text":
                 value = {text:inputValue}
                 break
+            case "email":
+                value = {email:inputValue}
+                break
+            case "phone":
+                value = {phone:inputValue}
+                break
             case "block":
                 value = {block:inputValue}
         }
