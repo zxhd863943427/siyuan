@@ -440,6 +440,11 @@ const dynamicSetCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTML
                 break
             case "block":
                 value = {block:inputValue}
+                break
+            default:
+                tmp = {}
+                tmp[type]=inputValue
+                value = tmp
         }
         
         fetchPost("/api/av/setAttributeViewBlockAttr", {
