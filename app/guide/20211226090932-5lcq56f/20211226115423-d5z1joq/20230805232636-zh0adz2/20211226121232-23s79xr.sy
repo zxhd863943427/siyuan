@@ -6,7 +6,7 @@
 		"icon": "1f308",
 		"id": "20211226121232-23s79xr",
 		"title": "雲端服務",
-		"updated": "20230627215033"
+		"updated": "20230805232827"
 	},
 	"Children": [
 		{
@@ -14,12 +14,12 @@
 			"Type": "NodeParagraph",
 			"Properties": {
 				"id": "20211226121232-oms16q8",
-				"updated": "20230627214434"
+				"updated": "20230805232826"
 			},
 			"Children": [
 				{
 					"Type": "NodeText",
-					"Data": "雲端服務包括："
+					"Data": "會員雲端服務包括："
 				}
 			]
 		},
@@ -164,12 +164,12 @@
 			"Type": "NodeParagraph",
 			"Properties": {
 				"id": "20230627214435-kgv5ksk",
-				"updated": "20230627214439"
+				"updated": "20230805232827"
 			},
 			"Children": [
 				{
 					"Type": "NodeText",
-					"Data": "雲端服務需要付費訂閱後才能使用："
+					"Data": "會員雲端服務需要付費訂閱後才能使用："
 				}
 			]
 		},

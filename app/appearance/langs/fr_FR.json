@@ -1,4 +1,6 @@
 {
+  "searchOverwrite": "Le nom de la requête est dupliqué, voulez-vous l'écraser ?",
+  "onepay": "PRO",
   "format": "Format des nombres",
   "numberFormatNone": "Numéro",
   "numberFormatCommas": "Nombre avec des virgules",

@@ -1,4 +1,6 @@
 {
+  "searchOverwrite": "El nombre de la consulta está duplicado, ¿quieres sobrescribirlo?",
+  "onepay": "PRO",
   "format": "Formato de número",
   "numberFormatNone": "Número",
   "numberFormatCommas": "Número con comas",
