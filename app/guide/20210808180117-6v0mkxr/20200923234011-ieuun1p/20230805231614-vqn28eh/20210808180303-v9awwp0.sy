@@ -6,7 +6,7 @@
 		"icon": "1f308",
 		"id": "20210808180303-v9awwp0",
 		"title": "Cloud Services",
-		"updated": "20230802131124"
+		"updated": "20230805231707"
 	},
 	"Children": [
 		{
@@ -14,12 +14,12 @@
 			"Type": "NodeParagraph",
 			"Properties": {
 				"id": "20230627215131-2ct8b6b",
-				"updated": "20230627215141"
+				"updated": "20230805231707"
 			},
 			"Children": [
 				{
 					"Type": "NodeText",
-					"Data": "Cloud services include:"
+					"Data": "Member's cloud services include:"
 				}
 			]
 		},
@@ -195,12 +195,12 @@
 			"Type": "NodeParagraph",
 			"Properties": {
 				"id": "20230627215126-rgxazmg",
-				"updated": "20230627215126"
+				"updated": "20230805231703"
 			},
 			"Children": [
 				{
 					"Type": "NodeText",
-					"Data": "Cloud services require a paid subscription to use:"
+					"Data": "Member's cloud services require a paid subscription to use:"
 				}
 			]
 		},
