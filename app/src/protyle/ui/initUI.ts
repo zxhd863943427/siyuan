@@ -136,9 +136,15 @@ export const setPadding = (protyle: IProtyle) => {
             }
             min16 = padding;
             min24 = padding;
+            protyle.wysiwyg.element.style.maxWidth = `${Constants.SIZE_EDITOR_WIDTH}px`;
+            protyle.wysiwyg.element.style.marginLeft = `auto`;
+            protyle.wysiwyg.element.style.marginRight = `auto`;
         } else if (protyle.element.clientWidth > Constants.SIZE_EDITOR_WIDTH) {
             min16 = 96;
             min24 = 96;
+            protyle.wysiwyg.element.style.maxWidth = `${protyle.element.clientWidth}px`;
+            protyle.wysiwyg.element.style.marginLeft = `${min16}px`;
+            protyle.wysiwyg.element.style.marginRight = `${min24}px`;
         }
     }
     let bottomHeight = "16px";
@@ -154,14 +160,16 @@ export const setPadding = (protyle: IProtyle) => {
             (min16 !== min24 && protyle.wysiwyg.element.style.padding === `4px ${min16}px 4px ${min24}px`)) {
             return true;
         }
-        protyle.wysiwyg.element.style.padding = `4px ${min16}px 4px ${min24}px`;
+        // protyle.wysiwyg.element.style.padding = `4px ${min16}px 4px ${min24}px`;
+        console.log("protyle.wysiwyg.element.style.padding = `4px ${min16}px 4px ${min24}px`;")
     } else {
         // https://github.com/siyuan-note/siyuan/issues/8859
         if ((min16 === min24 && protyle.wysiwyg.element.style.padding === `16px ${min16}px ${bottomHeight}`) ||
             (min16 !== min24 && protyle.wysiwyg.element.style.padding === `16px ${min16}px ${bottomHeight} ${min24}px`)) {
             return true;
         }
-        protyle.wysiwyg.element.style.padding = `16px ${min16}px ${bottomHeight} ${min24}px`;
+        // protyle.wysiwyg.element.style.padding = `16px ${min16}px ${bottomHeight} ${min24}px`;
+        console.log("protyle.wysiwyg.element.style.padding = `16px ${min16}px ${bottomHeight} ${min24}px`;")
     }
     if (protyle.options.render.background) {
         protyle.background.element.lastElementChild.setAttribute("style", `left:${min16}px`);

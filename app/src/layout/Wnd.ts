@@ -480,13 +480,13 @@ export class Wnd {
             }
             // focusin 触发前，layout__wnd--active 和 tab 已设置，需在调用里面更新
             if (update) {
-                updatePanelByEditor({
-                    protyle: currentTab.model.editor.protyle,
-                    focus: true,
-                    pushBackStack: pushBack,
-                    reload: false,
-                    resize: true,
-                });
+                // updatePanelByEditor({
+                //     protyle: currentTab.model.editor.protyle,
+                //     focus: true,
+                //     pushBackStack: pushBack,
+                //     reload: false,
+                //     resize: true,
+                // });
             }
         } else {
             updatePanelByEditor({

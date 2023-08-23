@@ -45,7 +45,7 @@ export const resize = (protyle: IProtyle) => {
             }
             const protyleRect = protyle.element.getBoundingClientRect();
             if (protyleRect.top + 30 > rangeRect.top || protyleRect.bottom < rangeRect.bottom) {
-                protyle.toolbar.range.startContainer.parentElement.scrollIntoView(protyleRect.top > rangeRect.top);
+                // protyle.toolbar.range.startContainer.parentElement.scrollIntoView(protyleRect.top > rangeRect.top);
             }
         }
     }, Constants.TIMEOUT_TRANSITION);   // 等待 setPadding 动画结束

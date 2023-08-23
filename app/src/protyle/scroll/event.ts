@@ -49,7 +49,7 @@ export const scrollEvent = (protyle: IProtyle, element: HTMLElement) => {
         });
 
         if (!protyle.element.classList.contains("block__edit") && !isMobile()) {
-            protyle.contentElement.setAttribute("data-scrolltop", element.scrollTop.toString());
+            // protyle.contentElement.setAttribute("data-scrolltop", element.scrollTop.toString());
         }
 
         if (!window.siyuan.dragElement) { // https://ld246.com/article/1649638389841
