@@ -142,7 +142,7 @@ export const setPadding = (protyle: IProtyle) => {
         } else if (protyle.element.clientWidth > Constants.SIZE_EDITOR_WIDTH) {
             min16 = 96;
             min24 = 96;
-            protyle.wysiwyg.element.style.maxWidth = `${protyle.element.clientWidth}px`;
+            protyle.wysiwyg.element.style.maxWidth = ``;
             protyle.wysiwyg.element.style.marginLeft = `${min16}px`;
             protyle.wysiwyg.element.style.marginRight = `${min24}px`;
         }
