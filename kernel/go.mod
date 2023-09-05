@@ -17,6 +17,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/Xuanwo/go-locale v1.1.0
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
+	github.com/bytedance/sonic v1.10.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/dgraph-io/ristretto v0.1.1
@@ -61,7 +62,7 @@ require (
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673
 	github.com/xuri/excelize/v2 v2.8.0
 	golang.org/x/image v0.11.0
-	golang.org/x/mobile v0.0.0-20230531173138-3c911d8e3eda
+	golang.org/x/mobile v0.0.0-20230901161150-52620a4a7557
 	golang.org/x/mod v0.12.0
 	golang.org/x/text v0.12.0
 )
@@ -77,7 +78,6 @@ require (
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef // indirect
 	github.com/aws/aws-sdk-go v1.44.332 // indirect
-	github.com/bytedance/sonic v1.10.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
@@ -161,7 +161,7 @@ require (
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/tools v0.12.1-0.20230815132531-74c255bcf846 // indirect
+	golang.org/x/tools v0.12.1-0.20230818130535-1517d1a3ba60 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
