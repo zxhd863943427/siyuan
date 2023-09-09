@@ -15,7 +15,7 @@ import {bootSync} from "../dialog/processSystem";
 import {initMessage, showMessage} from "../dialog/message";
 import {goBack} from "./util/MobileBackFoward";
 import {hideKeyboardToolbar, showKeyboardToolbar} from "./util/keyboardToolbar";
-import {getLocalStorage, isInAndroid, writeText} from "../protyle/util/compatibility";
+import {getLocalStorage, writeText} from "../protyle/util/compatibility";
 import {openMobileFileById} from "./editor";
 import {getSearch} from "../util/functions";
 import {initRightMenu} from "./menu";
@@ -106,7 +106,7 @@ class App {
             document.addEventListener("touchstart", handleTouchStart, false);
             document.addEventListener("touchmove", handleTouchMove, false);
             document.addEventListener("touchend", (event) => {
-                handleTouchEnd(event);
+                handleTouchEnd(event, siyuanApp);
             }, false);
         });
     }

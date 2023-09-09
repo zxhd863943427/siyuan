@@ -1,4 +1,7 @@
 {
+  "enable": "啟用",
+  "disable": "禁用",
+  "removeWorkspacePhysically": "是否物理刪除工作空間 ${x} 的數據？（物理刪除無法恢復）",
   "mainMenu": "主菜單",
   "searchRemoveName": "是否刪 ${x} 並將其查詢條件賦值給 ${y}？",
   "searchUpdateName": "是否將查詢名稱 ${x} 更新為 ${y}？",
@@ -1039,7 +1042,9 @@
     "task.history.database.index.commit": "執行歷史資料庫索引提交",
     "task.database.index.embedBlock": "執行資料庫索引嵌入塊",
     "task.reload.ui": "執行重載界面",
-    "task.upgrade.userGuide": "執行升級用戶指南"
+    "task.upgrade.userGuide": "執行升級用戶指南",
+    "task.asset.database.index.full": "執行資源文件數據庫重建索引",
+    "task.asset.database.index.commit": "執行資源文件數據庫索引提交"
   },
   "_trayMenu": {
     "showWindow": "顯示主窗口",
@@ -1089,7 +1094,7 @@
     "34": "唯讀模式下不支援該操作",
     "35": "正在重建索引，請稍等...",
     "36": "歷史文檔內容太多，為了不影響性能，已經切換為純文字顯示",
-    "37": "雲端同步目錄的名稱請勿包含空格和特殊符號",
+    "37": "雲端同步目錄名（Bucket）請勿包含空格和特殊符號，最大長度 63 字符",
     "38": "提及關鍵字數量 [%d] 過多，如有需要可以調整 [設置 - 搜索 - 反連提及 - 關鍵字數量限制]",
     "39": "正在刪除索引 %s",
     "40": "正在插入索引 %s",
