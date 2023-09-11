@@ -674,7 +674,7 @@ async function getRectImgData(pdfObj: any) {
         return;
     }
     const cavasElement = pageElement.querySelector(".canvasWrapper canvas") as HTMLCanvasElement;
-    let magnFactor = 2;
+    let magnFactor = 4;
     let scale;
     const trueWith = cavasElement.getBoundingClientRect().width;
     if (trueWith <= 0) {
