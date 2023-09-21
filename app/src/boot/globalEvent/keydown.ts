@@ -165,7 +165,7 @@ const editKeydown = (app: App, event: KeyboardEvent) => {
                 protyle = item.editor.protyle;
                 return true;
             }
-        })
+        });
     }
     if (!protyle && activeTabElement) {
         const tab = getInstanceById(activeTabElement.getAttribute("data-id")) as Tab;
@@ -187,11 +187,11 @@ const editKeydown = (app: App, event: KeyboardEvent) => {
                         protyle = editorItem.protyle;
                         return true;
                     }
-                })
+                });
                 if (protyle) {
-                    return true
+                    return true;
                 }
-            })
+            });
         }
         if (!protyle) {
             models.backlink.find(item => {
@@ -209,7 +209,7 @@ const editKeydown = (app: App, event: KeyboardEvent) => {
                     }
                     return true;
                 }
-            })
+            });
         }
         if (!protyle) {
             models.editor.find(item => {
@@ -283,9 +283,7 @@ const editKeydown = (app: App, event: KeyboardEvent) => {
         return true;
     }
     const target = event.target as HTMLElement;
-    if (target.tagName !== "TABLE" && (
-        target.tagName === "INPUT" || target.tagName === "TEXTAREA" || hasClosestByAttribute(target, "contenteditable", null)
-    )) {
+    if (target.tagName !== "TABLE" && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
         return false;
     }
     if (matchHotKey(window.siyuan.config.keymap.editor.general.refresh.custom, event)) {
@@ -315,6 +313,9 @@ const editKeydown = (app: App, event: KeyboardEvent) => {
         });
         event.preventDefault();
         return true;
+    }
+    if (hasClosestByClassName(target, "protyle-title__input")) {
+        return false;
     }
     // 没有光标时，无法撤销 https://ld246.com/article/1624021111567
     if (matchHotKey(window.siyuan.config.keymap.editor.general.undo.custom, event)) {
@@ -1081,7 +1082,7 @@ export const windowKeyDown = (app: App, event: KeyboardEvent) => {
         commandPanel(app);
         return;
     }
-    if (matchHotKey(window.siyuan.config.keymap.general.editMode.custom, event)) {
+    if (matchHotKey(window.siyuan.config.keymap.general.editReadonly.custom, event)) {
         event.preventDefault();
         editor.setReadonly(!window.siyuan.config.editor.readOnly);
         return;

@@ -173,6 +173,7 @@
     border-right: 1px solid var(--b3-theme-surface-lighter);
     display: flex;
     align-items: center;
+    transition: var(--b3-transition);
 
     [data-type="block-ref"] {
       display: none;
@@ -245,6 +246,11 @@
 
     &:hover svg {
       opacity: 1;
+    }
+
+    img {
+      height: 36px;
+      width: 24px;
     }
   }
 
