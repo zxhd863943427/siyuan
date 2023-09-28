@@ -10,11 +10,13 @@ import {addSort, bindSortsEvent, getSortsHTML} from "./sort";
 import {bindDateEvent, getDateHTML, setDateValue} from "./date";
 import {formatNumber} from "./number";
 import {removeAttrViewColAnimation} from "./action";
+import {addAssetLink, bindAssetEvent, editAssetItem, getAssetHTML, updateAssetCell} from "./asset";
+import {Constants} from "../../../constants";
 
 export const openMenuPanel = (options: {
     protyle: IProtyle,
     blockElement: Element,
-    type: "select" | "properties" | "config" | "sorts" | "filters" | "edit" | "date",
+    type: "select" | "properties" | "config" | "sorts" | "filters" | "edit" | "date" | "asset",
     colId?: string, // for edit
     cellElements?: HTMLElement[]    // for select & date
 }) => {
@@ -25,10 +27,8 @@ export const openMenuPanel = (options: {
     }
     window.siyuan.menus.menu.remove();
     const avID = options.blockElement.getAttribute("data-av-id");
-    const nodeID = options.blockElement.getAttribute("data-node-id");
     fetchPost("/api/av/renderAttributeView", {
         id: avID,
-        nodeID
     }, (response) => {
         const data = response.data as IAV;
         let html;
@@ -42,6 +42,8 @@ export const openMenuPanel = (options: {
             html = getFiltersHTML(data.view);
         } else if (options.type === "select") {
             html = getSelectHTML(data.view, options.cellElements);
+        } else if (options.type === "asset") {
+            html = getAssetHTML(data.view, options.cellElements);
         } else if (options.type === "edit") {
             html = getEditHTML({protyle: options.protyle, data, colId: options.colId});
         } else if (options.type === "date") {
@@ -54,21 +56,25 @@ export const openMenuPanel = (options: {
 </div>`);
         avPanelElement = document.querySelector(".av__panel");
         const menuElement = avPanelElement.lastElementChild as HTMLElement;
-        const tabRect = options.blockElement.querySelector(".layout-tab-bar").getBoundingClientRect();
-        if (options.type === "select") {
+        const tabRect = options.blockElement.querySelector(".layout-tab-bar")?.getBoundingClientRect();
+        if (["select", "date", "asset"].includes(options.type)) {
             const cellRect = options.cellElements[options.cellElements.length - 1].getBoundingClientRect();
-            setPosition(menuElement, cellRect.left, cellRect.bottom, cellRect.height);
-            bindSelectEvent(options.protyle, data, menuElement, options.cellElements);
-            const inputElement = menuElement.querySelector("input");
-            inputElement.select();
-            inputElement.focus();
-        } else if (options.type === "date") {
-            const cellRect = options.cellElements[options.cellElements.length - 1].getBoundingClientRect();
-            setPosition(menuElement, cellRect.left, cellRect.bottom, cellRect.height);
-            bindDateEvent({protyle: options.protyle, data, menuElement, cellElements: options.cellElements});
-            const inputElement = menuElement.querySelector("input");
-            inputElement.select();
-            inputElement.focus();
+            if (options.type === "select") {
+                bindSelectEvent(options.protyle, data, menuElement, options.cellElements);
+            } else if (options.type === "date") {
+                bindDateEvent({protyle: options.protyle, data, menuElement, cellElements: options.cellElements});
+            } else if (options.type === "asset") {
+                bindAssetEvent({protyle: options.protyle, data, menuElement, cellElements: options.cellElements});
+                setTimeout(() => {
+                    setPosition(menuElement, cellRect.left, cellRect.bottom, cellRect.height);
+                }, Constants.TIMEOUT_LOAD);  // 等待图片加载
+            }
+            if (["select", "date"].includes(options.type)) {
+                const inputElement = menuElement.querySelector("input");
+                inputElement.select();
+                inputElement.focus();
+                setPosition(menuElement, cellRect.left, cellRect.bottom, cellRect.height);
+            }
         } else {
             setPosition(menuElement, tabRect.right - menuElement.clientWidth, tabRect.bottom, tabRect.height);
             if (options.type === "sorts") {
@@ -86,7 +92,12 @@ export const openMenuPanel = (options: {
             window.siyuan.dragElement.style.opacity = "";
             const sourceElement = window.siyuan.dragElement;
             window.siyuan.dragElement = undefined;
-            if (options.protyle.disabled) {
+            if (options.protyle && options.protyle.disabled) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+            if (!options.protyle && window.siyuan.config.readonly) {
                 event.preventDefault();
                 event.stopPropagation();
                 return;
@@ -103,6 +114,8 @@ export const openMenuPanel = (options: {
                 type = "sorts";
             } else if (targetElement.querySelector('[data-type="removeFilter"]')) {
                 type = "filters";
+            } else if (targetElement.querySelector('[data-type="editAssetItem"]')) {
+                type = "assets";
             } else if (targetElement.querySelector('[data-type="setColOption"]')) {
                 const colId = options.cellElements ? options.cellElements[0].dataset.colId : menuElement.querySelector(".b3-menu__item").getAttribute("data-col-id");
                 const changeData = data.view.columns.find((column) => column.id === colId).options;
@@ -215,6 +228,31 @@ export const openMenuPanel = (options: {
                     data: oldData
                 }]);
                 menuElement.innerHTML = getFiltersHTML(data.view);
+                return;
+            }
+            if (type === "assets") {
+                if (isTop) {
+                    targetElement.before(sourceElement);
+                } else {
+                    targetElement.after(sourceElement);
+                }
+                const replaceValue: IAVCellAssetValue[] = [];
+                Array.from(targetElement.parentElement.children).forEach((item: HTMLElement) => {
+                    if (item.dataset.content) {
+                        replaceValue.push({
+                            content: item.dataset.content,
+                            name: item.dataset.name,
+                            type: item.dataset.type as "image" | "file",
+                        });
+                    }
+                });
+                updateAssetCell({
+                    protyle: options.protyle,
+                    data,
+                    cellElements: options.cellElements,
+                    type: "replace",
+                    replaceValue
+                });
                 return;
             }
             transaction(options.protyle, [{
@@ -588,7 +626,6 @@ export const openMenuPanel = (options: {
                         type: colData.type,
                         avID,
                         colId,
-                        nodeID,
                         newValue: colData.name
                     });
                     avPanelElement.remove();
@@ -627,6 +664,16 @@ export const openMenuPanel = (options: {
                     break;
                 } else if (type === "removeCellOption") {
                     removeCellOption(options.protyle, data, options.cellElements, target.parentElement);
+                    event.preventDefault();
+                    event.stopPropagation();
+                    break;
+                } else if (type === "addAssetLink") {
+                    addAssetLink(options.protyle, data, options.cellElements, target);
+                    event.preventDefault();
+                    event.stopPropagation();
+                    break;
+                } else if (type === "editAssetItem") {
+                    editAssetItem(options.protyle, data, options.cellElements, target.parentElement);
                     event.preventDefault();
                     event.stopPropagation();
                     break;

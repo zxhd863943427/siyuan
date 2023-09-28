@@ -235,7 +235,7 @@ export const genSearch = (app: App, config: ISearchOption, element: Element, clo
         <div id="searchPreview" class="fn__flex-1 search__preview"></div>
     </div>
     <div class="search__tip${closeCB ? "" : " fn__none"}">
-        <kbd>↑/↓</kbd> ${window.siyuan.languages.searchTip1}
+        <kbd>↑/↓/PageUp/PageDown</kbd> ${window.siyuan.languages.searchTip1}
         <kbd>${updateHotkeyTip(window.siyuan.config.keymap.general.newFile.custom)}</kbd> ${window.siyuan.languages.new}
         <kbd>Enter/Double Click</kbd> ${window.siyuan.languages.searchTip2}
         <kbd>Click</kbd> ${window.siyuan.languages.searchTip3}
@@ -649,14 +649,22 @@ export const genSearch = (app: App, config: ISearchOption, element: Element, clo
                 break;
             } else if (type === "assetPrevious") {
                 if (!target.getAttribute("disabled")) {
-                    assetInputEvent(assetsElement, localSearch, parseInt(assetsElement.querySelector("#searchAssetResult .fn__flex-center").textContent.split("/")[1]) - 1);
+                    let currentPage = parseInt(assetsElement.querySelector("#searchAssetResult .fn__flex-center").textContent.split("/")[0])
+                    if (currentPage > 1) {
+                        currentPage--;
+                        assetInputEvent(assetsElement, localSearch, currentPage);
+                    }
                 }
                 event.stopPropagation();
                 event.preventDefault();
                 break;
             } else if (type === "assetNext") {
                 if (!target.getAttribute("disabled")) {
-                    assetInputEvent(assetsElement, localSearch, parseInt(assetsElement.querySelector("#searchAssetResult .fn__flex-center").textContent.split("/")[1]) + 1);
+                    let currentPage = parseInt(assetsElement.querySelector("#searchAssetResult .fn__flex-center").textContent.split("/")[0])
+                    if (currentPage < parseInt(assetsElement.querySelector("#searchAssetResult .fn__flex-center").textContent.split("/")[1])) {
+                        currentPage++;
+                        assetInputEvent(assetsElement, localSearch, currentPage);
+                    }
                 }
                 event.stopPropagation();
                 event.preventDefault();
@@ -992,6 +1000,24 @@ export const genSearch = (app: App, config: ISearchOption, element: Element, clo
                 edit,
             });
             event.preventDefault();
+        } else if (Constants.KEYCODELIST[event.keyCode] === "PageUp") {
+            const previousElement = element.querySelector('[data-type="previous"]');
+            if (!previousElement.getAttribute("disabled")) {
+                if (config.page > 1) {
+                    config.page--;
+                    inputTimeout = inputEvent(element, config, inputTimeout, edit);
+                }
+            }
+            event.preventDefault();
+        } else if (Constants.KEYCODELIST[event.keyCode] === "PageDown") {
+            const nextElement = element.querySelector('[data-type="next"]');
+            if (!nextElement.getAttribute("disabled")) {
+                if (config.page < parseInt(nextElement.parentElement.querySelector("#searchResult").getAttribute("data-pagecount"))) {
+                    config.page++;
+                    inputTimeout = inputEvent(element, config, inputTimeout, edit);
+                }
+            }
+            event.preventDefault();
         }
     });
     replaceInputElement.addEventListener("keydown", (event: KeyboardEvent) => {
@@ -1268,7 +1294,7 @@ const inputEvent = (element: Element, config: ISearchOption, inputTimeout: numbe
                 searchElement: searchInputElement,
             });
         });
-        const searchResultElement = element.querySelector("#searchResult")
+        const searchResultElement = element.querySelector("#searchResult");
         if (inputValue === "" && (!config.idPath || config.idPath.length === 0)) {
             fetchPost("/api/block/getRecentUpdatedBlocks", {}, (response) => {
                 onSearch(response.data, edit, element, config);
@@ -1304,7 +1330,7 @@ const inputEvent = (element: Element, config: ISearchOption, inputTimeout: numbe
                 searchResultElement.innerHTML = `${config.page}/${response.data.pageCount || 1}<span class="fn__space"></span>
 <span class="ft__on-surface">${window.siyuan.languages.findInDoc.replace("${x}", response.data.matchedRootCount).replace("${y}", response.data.matchedBlockCount)}</span>`;
                 loadingElement.classList.add("fn__none");
-                searchResultElement.setAttribute("data-pagecount", response.data.pageCount || 1)
+                searchResultElement.setAttribute("data-pagecount", response.data.pageCount || 1);
             });
         }
     }, Constants.TIMEOUT_INPUT);

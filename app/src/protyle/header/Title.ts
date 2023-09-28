@@ -140,15 +140,10 @@ export class Title {
                 fetchPost("/api/block/getDocInfo", {
                     id: protyle.block.rootID
                 }, (response) => {
-                    openFileAttr(response.data.ial);
+                    openFileAttr(response.data.ial, "bookmark", protyle);
                 });
                 event.preventDefault();
                 event.stopPropagation();
-            } else if (matchHotKey(window.siyuan.config.keymap.editor.general.quickMakeCard.custom, event)) {
-                quickMakeCard(protyle, [this.element]);
-                event.preventDefault();
-                event.stopPropagation();
-                return true;
             } else if (matchHotKey("⌘A", event)) {
                 getEditorRange(this.editElement).selectNodeContents(this.editElement);
                 event.preventDefault();
@@ -179,7 +174,7 @@ export class Title {
                 fetchPost("/api/block/getDocInfo", {
                     id: protyle.block.rootID
                 }, (response) => {
-                    openFileAttr(response.data.ial);
+                    openFileAttr(response.data.ial, "bookmark", protyle);
                 });
             } else {
                 const iconRect = iconElement.getBoundingClientRect();
@@ -286,7 +281,6 @@ export class Title {
             setTitle(fileName);
         }, Constants.TIMEOUT_INPUT);
     }
-
 
     public setTitle(title: string) {
         if (code160to32(title) !== code160to32(this.editElement.textContent)) {
