@@ -24,6 +24,7 @@ type TOperation =
     | "removeFlashcards"
     | "updateAttrViewCell"
     | "updateAttrViewCol"
+    | "updateAttrViewColTemplate"
     | "sortAttrViewRow"
     | "sortAttrViewCol"
     | "setAttrViewColHidden"
@@ -33,6 +34,7 @@ type TOperation =
     | "removeAttrViewColOption"
     | "updateAttrViewColOption"
     | "setAttrViewName"
+    | "setAttrViewColIcon"
     | "setAttrViewFilters"
     | "setAttrViewSorts"
     | "setAttrViewColCalc"
@@ -44,7 +46,7 @@ type TEventBus = "ws-main" |
     "click-blockicon" | "click-editorcontent" | "click-pdf" | "click-editortitleicon" |
     "open-noneditableblock" |
     "open-menu-blockref" | "open-menu-fileannotationref" | "open-menu-tag" | "open-menu-link" | "open-menu-image" |
-    "open-menu-av" | "open-menu-content" | "open-menu-breadcrumbmore" |
+    "open-menu-av" | "open-menu-content" | "open-menu-breadcrumbmore" | "open-menu-doctree" |
     "open-siyuan-url-plugin" | "open-siyuan-url-block" |
     "input-search" |
     "loaded-protyle" | "loaded-protyle-dynamic" |
@@ -62,6 +64,7 @@ type TAVCol =
     | "email"
     | "phone"
     | "mAsset"
+    | "template"
 type THintSource = "search" | "av" | "hint";
 type TAVFilterOperator =
     "="
@@ -81,8 +84,45 @@ type TAVFilterOperator =
 declare module "blueimp-md5"
 
 interface Window {
+    echarts: {
+        init(element: HTMLElement, theme?: string, options?: { width: number }): {
+            setOption(option: any): void;
+            getZr(): any;
+            on(name: string, event: (e: any) => void): any;
+            containPixel(name: string, position: number[]): any;
+            resize(): void;
+        };
+        dispose(element: Element): void;
+        getInstanceById(id: string): { resize: () => void };
+    }
+    ABCJS: {
+        renderAbc(element: Element, text: string, options: { responsive: string }): void;
+    }
+    hljs: {
+        listLanguages(): string[];
+        highlight(text: string, options: { language?: string, ignoreIllegals: boolean }): { value: string };
+        getLanguage(text: string): { name: string };
+    };
+    katex: {
+        renderToString(math: string, option: {
+            displayMode: boolean;
+            output: string;
+            macros: IObject;
+            trust: boolean;
+            strict: (errorCode: string) => "ignore" | "warn";
+        }): string;
+    }
+    mermaid: {
+        initialize(options: any): void,
+        init(options: any, element: Element): void
+    };
+    plantumlEncoder: {
+        encode(options: string): string,
+    };
     pdfjsLib: any
+
     dataLayer: any[]
+
     siyuan: ISiyuan
     webkit: any
     html2canvas: (element: Element, opitons: {
@@ -113,6 +153,14 @@ interface Window {
     hideKeyboardToolbar(): void
 
     openFileByURL(URL: string): boolean
+}
+
+interface IPosition {
+    x: number,
+    y: number,
+    w?: number,
+    h?: number,
+    isLeft?: boolean
 }
 
 interface ISaveLayout {
@@ -189,6 +237,7 @@ interface ISearchOption {
         codeBlock: boolean
         htmlBlock: boolean
         embedBlock: boolean
+        databaseBlock: boolean
     }
 }
 
@@ -344,11 +393,7 @@ interface ISiyuan {
     bookmarkLabel?: string[]
     blockPanels: import("../block/Panel").BlockPanel[],
     dialogs: import("../dialog").Dialog[],
-    viewer?: {
-        destroyed: boolean,
-        show: () => void,
-        destroy: () => void,
-    }
+    viewer?: Viewer
 }
 
 interface IScrollAttr {
@@ -611,7 +656,11 @@ interface IConfig {
         mark: boolean
         list: boolean
         superBlock: boolean
+        heading: boolean
         deck: boolean
+        requestRetention: number
+        maximumInterval: number
+        weights: string
     }
     ai: {
         openAI: {
@@ -703,6 +752,7 @@ interface IConfig {
         sort: number
     }
     search: {
+        databaseBlock: boolean
         embedBlock: boolean
         htmlBlock: boolean
         document: boolean
@@ -885,6 +935,7 @@ interface IModels {
 }
 
 interface IMenu {
+    iconClass?: string,
     label?: string,
     click?: (element: HTMLElement, event: MouseEvent) => boolean | void | Promise<boolean | void>
     type?: "separator" | "submenu" | "readonly",
@@ -976,6 +1027,7 @@ interface IAVColumn {
     hidden: boolean,
     type: TAVCol,
     numberFormat: string,
+    template: string,
     calc: {
         operator: string,
         result: IAVCellValue
@@ -1025,6 +1077,9 @@ interface IAVCellValue {
         content: string
     }
     email?: {
+        content: string
+    }
+    template?: {
         content: string
     }
     date?: IAVCellDateValue

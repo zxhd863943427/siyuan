@@ -3,6 +3,8 @@ import {hasClosestBlock, hasClosestByClassName} from "../../util/hasClosest";
 import {openMenuPanel} from "./openMenuPanel";
 import {Menu} from "../../../plugin/Menu";
 import {updateAttrViewCellAnimation} from "./action";
+import {isCtrl} from "../../util/compatibility";
+import {objEquals} from "../../../util/functions";
 
 export const getCalcValue = (column: IAVColumn) => {
     if (!column.calc || !column.calc.result) {
@@ -163,6 +165,7 @@ const calcItem = (options: {
         }
     });
 };
+
 export const openCalcMenu = (protyle: IProtyle, calcElement: HTMLElement) => {
     const blockElement = hasClosestBlock(calcElement);
     if (!blockElement) {
@@ -343,12 +346,15 @@ export const popTextCell = (protyle: IProtyle, cellElements: HTMLElement[], type
     if (!type) {
         type = cellElements[0].parentElement.parentElement.firstElementChild.querySelector(`[data-col-id="${cellElements[0].getAttribute("data-col-id")}"]`).getAttribute("data-dtype") as TAVCol;
     }
+    if (type === "template") {
+        return;
+    }
     if (type === "block" && (cellElements.length > 1 || !cellElements[0].getAttribute("data-detached"))) {
         return;
     }
     const cellRect = cellElements[0].getBoundingClientRect();
     let html = "";
-    const style = `style="position:absolute;left: ${cellRect.left}px;top: ${cellRect.top}px;width:${Math.max(cellRect.width, 200)}px;height: ${cellRect.height}px"`;
+    const style = `style="position:absolute;left: ${cellRect.left}px;top: ${cellRect.top}px;width:${Math.max(cellRect.width, 100)}px;height: ${cellRect.height}px"`;
     const blockElement = hasClosestBlock(cellElements[0]);
     if (["text", "url", "email", "phone", "block"].includes(type)) {
         html = `<textarea ${style} class="b3-text-field">${cellElements[0].firstElementChild.textContent}</textarea>`;
@@ -380,7 +386,8 @@ export const popTextCell = (protyle: IProtyle, cellElements: HTMLElement[], type
             if (event.isComposing) {
                 return;
             }
-            if (event.key === "Escape" || event.key === "Enter") {
+            if (event.key === "Escape" ||
+                (event.key === "Enter" && !event.shiftKey && !isCtrl(event))) {
                 updateCellValue(protyle, type, cellElements);
                 event.preventDefault();
                 event.stopPropagation();
@@ -398,9 +405,9 @@ const updateCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElem
     if (!document.contains(cellElements[0]) && cellElements.length === 1 && cellElements[0].dataset.detached === "true") {
         // 新增行后弹出的输入框进行修改后，原始 cell 已被更新
         const avid = cellElements[0].parentElement.dataset.avid;
-        cellElements[0] = protyle.wysiwyg.element.querySelector(`[data-av-id="${avid}"] .av__row--add`).previousElementSibling.querySelector('[data-detached="true"]')
+        cellElements[0] = protyle.wysiwyg.element.querySelector(`[data-av-id="${avid}"] .av__row--add`).previousElementSibling.querySelector('[data-detached="true"]');
     }
-    if ( cellElements.length === 1 && cellElements[0].dataset.detached === "true" && !cellElements[0].parentElement.dataset.id) {
+    if (cellElements.length === 1 && cellElements[0].dataset.detached === "true" && !cellElements[0].parentElement.dataset.id) {
         return;
     }
     const blockElement = hasClosestBlock(cellElements[0]);
@@ -432,6 +439,9 @@ const updateCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElem
             inputValue.content = parseFloat(inputValue.content as string);
             inputValue.isNotEmpty = !!inputValue.content;
         }
+        if (objEquals(inputValue, oldValue)) {
+            return;
+        }
         doOperations.push({
             action: "updateAttrViewCell",
             id: cellId,
@@ -454,7 +464,9 @@ const updateCellValue = (protyle: IProtyle, type: TAVCol, cellElements: HTMLElem
         });
         updateAttrViewCellAnimation(item);
     });
-    transaction(protyle, doOperations, undoOperations);
+    if (doOperations.length > 0) {
+        transaction(protyle, doOperations, undoOperations);
+    }
     setTimeout(() => {
         avMaskElement.remove();
     });

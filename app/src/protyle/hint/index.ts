@@ -33,7 +33,6 @@ import {isMobile} from "../../util/functions";
 import {isCtrl, isIPhone} from "../util/compatibility";
 import {avRender} from "../render/av/render";
 import {genIconHTML} from "../render/util";
-import {insertAttrViewBlockAnimation} from "../render/av/action";
 
 export class Hint {
     public timeId: number;
@@ -369,7 +368,7 @@ ${genHintItemHTML(item)}
             }
             lazyLoadEmojiImg(panelElement);
         } else {
-            this.element.innerHTML = `<div class="emojis">
+            this.element.innerHTML = `<div style="padding: 0" class="emojis">
 <div class="emojis__panel">${filterEmoji(value, 256)}</div>
 <div class="fn__flex${value ? " fn__none" : ""}">
     <button data-type="0" class="emojis__type ariaLabel" aria-label="${window.siyuan.languages.recentEmoji}">${unicode2Emoji("2b50")}</button>
@@ -415,7 +414,7 @@ ${genHintItemHTML(item)}
             if (!cellElement) {
                 return;
             }
-            const previousID = cellElement.dataset.blockId
+            const previousID = cellElement.dataset.blockId;
             const avID = nodeElement.getAttribute("data-av-id");
             let tempElement = document.createElement("div");
             tempElement.innerHTML = value.replace(/<mark>/g, "").replace(/<\/mark>/g, "");
@@ -601,7 +600,9 @@ ${genHintItemHTML(item)}
             } else if (value === Constants.ZWSP + 2) {
                 range.deleteContents();
                 this.fixImageCursor(range);
-                protyle.toolbar.showAssets(protyle, nodeElement, range);
+                protyle.toolbar.range = range;
+                const rangePosition = getSelectionPosition(nodeElement, range);
+                protyle.toolbar.showAssets(protyle, {x: rangePosition.left, y: rangePosition.top + 26, w: 0, h: 26});
                 updateTransaction(protyle, id, nodeElement.outerHTML, html);
                 return;
             } else if (value === Constants.ZWSP + 3) {
@@ -766,8 +767,9 @@ ${genHintItemHTML(item)}
                     const rect = nodeElement.getBoundingClientRect();
                     window.siyuan.menus.menu.popup({
                         x: rect.left,
-                        y: rect.top
-                    }, true);
+                        y: rect.top,
+                        isLeft: true
+                    });
                     const itemElement = window.siyuan.menus.menu.element.querySelector('[data-id="assetSubMenu"]');
                     itemElement.classList.add("b3-menu__item--show");
                     window.siyuan.menus.menu.showSubMenu(itemElement.querySelector(".b3-menu__submenu"));

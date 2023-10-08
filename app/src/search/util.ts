@@ -32,8 +32,10 @@ import {upDownHint} from "../util/upDownHint";
 import {
     assetFilterMenu,
     assetInputEvent,
-    assetMethodMenu, assetMoreMenu,
-    openSearchAsset, renderNextAssetMark,
+    assetMethodMenu,
+    assetMoreMenu,
+    openSearchAsset,
+    renderNextAssetMark,
     renderPreview,
     toggleAssetHistory
 } from "./assets";
@@ -365,6 +367,7 @@ export const genSearch = (app: App, config: ISearchOption, element: Element, clo
                         superBlock: window.siyuan.config.search.superBlock,
                         paragraph: window.siyuan.config.search.paragraph,
                         embedBlock: window.siyuan.config.search.embedBlock,
+                        databaseBlock: window.siyuan.config.search.databaseBlock,
                     }
                 }, config, edit);
                 element.querySelector(".b3-chip--current")?.classList.remove("b3-chip--current");
@@ -578,6 +581,7 @@ export const genSearch = (app: App, config: ISearchOption, element: Element, clo
                             superBlock: window.siyuan.config.search.superBlock,
                             paragraph: window.siyuan.config.search.paragraph,
                             embedBlock: window.siyuan.config.search.embedBlock,
+                            databaseBlock: window.siyuan.config.search.databaseBlock,
                         }
                     }, config, edit);
                     element.querySelector("#criteria .b3-chip--current")?.classList.remove("b3-chip--current");
@@ -634,7 +638,7 @@ export const genSearch = (app: App, config: ISearchOption, element: Element, clo
                     }).element);
                 });
                 const rect = target.getBoundingClientRect();
-                window.siyuan.menus.menu.popup({x: rect.right, y: rect.bottom}, true);
+                window.siyuan.menus.menu.popup({x: rect.right, y: rect.bottom, isLeft: true});
                 event.stopPropagation();
                 event.preventDefault();
                 break;
@@ -649,7 +653,7 @@ export const genSearch = (app: App, config: ISearchOption, element: Element, clo
                 break;
             } else if (type === "assetPrevious") {
                 if (!target.getAttribute("disabled")) {
-                    let currentPage = parseInt(assetsElement.querySelector("#searchAssetResult .fn__flex-center").textContent.split("/")[0])
+                    let currentPage = parseInt(assetsElement.querySelector("#searchAssetResult .fn__flex-center").textContent.split("/")[0]);
                     if (currentPage > 1) {
                         currentPage--;
                         assetInputEvent(assetsElement, localSearch, currentPage);
@@ -660,7 +664,7 @@ export const genSearch = (app: App, config: ISearchOption, element: Element, clo
                 break;
             } else if (type === "assetNext") {
                 if (!target.getAttribute("disabled")) {
-                    let currentPage = parseInt(assetsElement.querySelector("#searchAssetResult .fn__flex-center").textContent.split("/")[0])
+                    let currentPage = parseInt(assetsElement.querySelector("#searchAssetResult .fn__flex-center").textContent.split("/")[0]);
                     if (currentPage < parseInt(assetsElement.querySelector("#searchAssetResult .fn__flex-center").textContent.split("/")[1])) {
                         currentPage++;
                         assetInputEvent(assetsElement, localSearch, currentPage);
@@ -698,7 +702,7 @@ export const genSearch = (app: App, config: ISearchOption, element: Element, clo
                     inputEvent(element, config, undefined, edit, true);
                 });
                 const rect = target.getBoundingClientRect();
-                window.siyuan.menus.menu.popup({x: rect.right, y: rect.bottom}, true);
+                window.siyuan.menus.menu.popup({x: rect.right, y: rect.bottom, isLeft: true});
                 event.stopPropagation();
                 event.preventDefault();
                 break;

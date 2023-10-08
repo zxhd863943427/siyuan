@@ -130,7 +130,8 @@ The overall program is located under `/opt/siyuan/`, which is basically the stru
 
 The entry point is set when building the Docker image: `ENTRYPOINT ["/opt/siyuan/kernel" ]`, use `docker run b3log/siyuan` with parameters to start:
 
-* `--workspace` specifies the workspace folder path, mounted to the container via `-v` on the host
+* `--workspace`: Specifies the workspace folder path, mounted to the container via `-v` on the host
+* `--accessAuthCode`: Specifies the access authorization code
 
 More parameters can refer to `--help`. The following is an example of a startup command:
 
@@ -138,7 +139,7 @@ More parameters can refer to `--help`. The following is an example of a startup 
 docker run -v workspace_dir_host:workspace_dir_container -p 6806:6806 b3log/siyuan --workspace=workspace_dir_container --accessAuthCode=xxx
 ```
 
-* `workspace_dir_host`: the workspace folder path on the host
+* `workspace_dir_host`: The workspace folder path on the host
 * `workspace_dir_container`: The path of the workspace folder in the container, which is the same as specified in `--workspace`
 * `accessAuthCode`: Access authorization code, please **be sure to modify**, otherwise anyone can read and write your data
 
@@ -234,7 +235,7 @@ For more details, please refer to [Development Guide](https://github.com/siyuan-
 * If it is installed through the installation package on the desktop, you can open the option of <kbd>Settings</kbd> - <kbd>About</kbd> - <kbd>Automatically download update installation package</kbd>, so that SiYuan will automatically download The latest version of the installation package and prompts to install
 * If it is installed by manual installation package, please download the installation package again to install
 
-You can <kbd>Check update</kbd> in <kbd>Settings</kbd> - <kbd>About</kbd> - <kbd>Current Version</kbd>, or pay attention to [Official website](https://b3log.org/siyuan/) or [GitHub Releases](https://github.com/siyuan-note/siyuan/releases) to get the new version.
+You can <kbd>Check update</kbd> in <kbd>Settings</kbd> - <kbd>About</kbd> - <kbd>Current Version</kbd>, or pay attention to [Official Download](https://b3log.org/siyuan/en/download.html) or [GitHub Releases](https://github.com/siyuan-note/siyuan/releases) to get the new version.
 
 ### Is there any note for deleting docs?
 

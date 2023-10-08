@@ -17,12 +17,16 @@
 package model
 
 import (
+	"bytes"
 	"sort"
 	"strings"
+	"text/template"
+	"time"
 
 	"github.com/88250/gulu"
 	"github.com/88250/lute/ast"
 	"github.com/88250/lute/parse"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/siyuan-note/logging"
 	"github.com/siyuan-note/siyuan/kernel/av"
 	"github.com/siyuan-note/siyuan/kernel/treenode"
@@ -35,12 +39,65 @@ type BlockAttributeViewKeys struct {
 	KeyValues []*av.KeyValues `json:"keyValues"`
 }
 
+func renderTemplateCol(blockID, tplContent string, rowValues []*av.KeyValues) string {
+	funcMap := sprig.TxtFuncMap()
+	goTpl := template.New("").Delims(".action{", "}")
+	tplContent = strings.ReplaceAll(tplContent, ".custom-", ".custom_") // 模板中的属性名不允许包含 - 字符，因此这里需要替换
+	tpl, tplErr := goTpl.Funcs(funcMap).Parse(tplContent)
+	if nil != tplErr {
+		logging.LogWarnf("parse template [%s] failed: %s", tplContent, tplErr)
+		return ""
+	}
+
+	buf := &bytes.Buffer{}
+	ial := GetBlockAttrs(blockID)
+	dataModel := map[string]interface{}{} // 复制一份 IAL 以避免修改原始数据
+	for k, v := range ial {
+		dataModel[strings.ReplaceAll(k, "custom-", "custom_")] = v
+
+		// Database template column supports `created` and `updated` built-in variables https://github.com/siyuan-note/siyuan/issues/9364
+		createdStr := ial["id"]
+		if "" != createdStr {
+			createdStr = createdStr[:len("20060102150405")]
+		}
+		created, parseErr := time.Parse("20060102150405", createdStr)
+		if nil == parseErr {
+			dataModel["created"] = created
+		} else {
+			logging.LogWarnf("parse created [%s] failed: %s", createdStr, parseErr)
+			dataModel["created"] = time.Now()
+		}
+		updatedStr := ial["updated"]
+		updated, parseErr := time.Parse("20060102150405", updatedStr)
+		if nil == parseErr {
+			dataModel["updated"] = updated
+		} else {
+			logging.LogWarnf("parse updated [%s] failed: %s", updatedStr, parseErr)
+			dataModel["updated"] = time.Now()
+		}
+	}
+	for _, rowValue := range rowValues {
+		if 0 < len(rowValue.Values) {
+			v := rowValue.Values[0]
+			if av.KeyTypeNumber == v.Type {
+				dataModel[rowValue.Key.Name] = v.Number.Content
+			} else {
+				dataModel[rowValue.Key.Name] = v.String()
+			}
+		}
+	}
+	if err := tpl.Execute(buf, dataModel); nil != err {
+		logging.LogWarnf("execute template [%s] failed: %s", tplContent, err)
+	}
+	return buf.String()
+}
+
 func GetBlockAttributeViewKeys(blockID string) (ret []*BlockAttributeViewKeys) {
 	waitForSyncingStorages()
 
 	ret = []*BlockAttributeViewKeys{}
 	attrs := GetBlockAttrs(blockID)
-	avs := attrs[NodeAttrNameAvs]
+	avs := attrs[av.NodeAttrNameAvs]
 	if "" == avs {
 		return
 	}
@@ -71,9 +128,35 @@ func GetBlockAttributeViewKeys(blockID string) (ret []*BlockAttributeViewKeys) {
 				}
 			}
 
+			if av.KeyTypeTemplate == kValues.Key.Type {
+				kValues.Values = append(kValues.Values, &av.Value{ID: ast.NewNodeID(), KeyID: kValues.Key.ID, BlockID: blockID, Type: av.KeyTypeTemplate, Template: &av.ValueTemplate{Content: ""}})
+			}
+
 			if 0 < len(kValues.Values) {
 				keyValues = append(keyValues, kValues)
 			}
+		}
+
+		// 渲染模板列
+		for _, kv := range keyValues {
+			if av.KeyTypeTemplate == kv.Key.Type {
+				if 0 < len(kv.Values) {
+					kv.Values[0].Template.Content = renderTemplateCol(blockID, kv.Key.Template, keyValues)
+				}
+			}
+		}
+
+		// Attribute Panel - Database sort attributes by view column order https://github.com/siyuan-note/siyuan/issues/9319
+		view, _ := attrView.GetView()
+		if nil != view {
+			sorts := map[string]int{}
+			for i, col := range view.Table.Columns {
+				sorts[col.ID] = i
+			}
+
+			sort.Slice(keyValues, func(i, j int) bool {
+				return sorts[keyValues[i].Key.ID] < sorts[keyValues[j].Key.ID]
+			})
 		}
 
 		ret = append(ret, &BlockAttributeViewKeys{
@@ -155,6 +238,7 @@ func renderAttributeViewTable(attrView *av.AttributeView, view *av.View) (ret *a
 			Icon:         key.Icon,
 			Options:      key.Options,
 			NumberFormat: key.NumberFormat,
+			Template:     key.Template,
 			Wrap:         col.Wrap,
 			Hidden:       col.Hidden,
 			Width:        col.Width,
@@ -163,17 +247,34 @@ func renderAttributeViewTable(attrView *av.AttributeView, view *av.View) (ret *a
 	}
 
 	// 生成行
-	rows := map[string][]*av.Value{}
+	rows := map[string][]*av.KeyValues{}
 	for _, keyValues := range attrView.KeyValues {
 		for _, val := range keyValues.Values {
-			rows[val.BlockID] = append(rows[val.BlockID], val)
+			values := rows[val.BlockID]
+			if nil == values {
+				values = []*av.KeyValues{{Key: keyValues.Key, Values: []*av.Value{val}}}
+			} else {
+				values = append(values, &av.KeyValues{Key: keyValues.Key, Values: []*av.Value{val}})
+			}
+			rows[val.BlockID] = values
 		}
 	}
 
 	// 过滤掉不存在的行
 	var notFound []string
-	for blockID, v := range rows {
-		if v[0].IsDetached {
+	for blockID, keyValues := range rows {
+		blockValue := getRowBlockValue(keyValues)
+		if nil == blockValue {
+			notFound = append(notFound, blockID)
+			continue
+		}
+
+		if blockValue.IsDetached {
+			continue
+		}
+
+		if nil != blockValue.Block && "" == blockValue.Block.ID {
+			notFound = append(notFound, blockID)
 			continue
 		}
 
@@ -190,11 +291,11 @@ func renderAttributeViewTable(attrView *av.AttributeView, view *av.View) (ret *a
 		var tableRow av.TableRow
 		for _, col := range ret.Columns {
 			var tableCell *av.TableCell
-			for _, val := range row {
-				if val.KeyID == col.ID {
+			for _, keyValues := range row {
+				if keyValues.Key.ID == col.ID {
 					tableCell = &av.TableCell{
-						ID:        val.ID,
-						Value:     val,
+						ID:        keyValues.Values[0].ID,
+						Value:     keyValues.Values[0],
 						ValueType: col.Type,
 					}
 					break
@@ -209,14 +310,30 @@ func renderAttributeViewTable(attrView *av.AttributeView, view *av.View) (ret *a
 			tableRow.ID = rowID
 
 			// 格式化数字
-			if av.KeyTypeNumber == tableCell.ValueType && nil != tableCell.Value && nil != tableCell.Value.Number {
+			if av.KeyTypeNumber == tableCell.ValueType && nil != tableCell.Value && nil != tableCell.Value.Number && tableCell.Value.Number.IsNotEmpty {
 				tableCell.Value.Number.Format = col.NumberFormat
 				tableCell.Value.Number.FormatNumber()
+			}
+
+			// 渲染模板列
+			if av.KeyTypeTemplate == tableCell.ValueType {
+				tableCell.Value = &av.Value{ID: tableCell.ID, KeyID: col.ID, BlockID: rowID, Type: av.KeyTypeTemplate, Template: &av.ValueTemplate{Content: col.Template}}
 			}
 
 			tableRow.Cells = append(tableRow.Cells, tableCell)
 		}
 		ret.Rows = append(ret.Rows, &tableRow)
+	}
+
+	// 渲染模板列
+	for _, row := range ret.Rows {
+		for _, cell := range row.Cells {
+			if av.KeyTypeTemplate == cell.ValueType {
+				keyValues := rows[row.ID]
+				content := renderTemplateCol(row.ID, cell.Value.Template.Content, keyValues)
+				cell.Value.Template.Content = content
+			}
+		}
 	}
 
 	// 自定义排序
@@ -238,6 +355,16 @@ func renderAttributeViewTable(attrView *av.AttributeView, view *av.View) (ret *a
 	return
 }
 
+func getRowBlockValue(keyValues []*av.KeyValues) (ret *av.Value) {
+	for _, kv := range keyValues {
+		if av.KeyTypeBlock == kv.Key.Type && 0 < len(kv.Values) {
+			ret = kv.Values[0]
+			break
+		}
+	}
+	return
+}
+
 func (tx *Transaction) doSetAttrViewName(operation *Operation) (ret *TxErr) {
 	err := setAttributeViewName(operation)
 	if nil != err {
@@ -252,16 +379,13 @@ func setAttributeViewName(operation *Operation) (err error) {
 		return
 	}
 
-	attrView.Name = operation.Data.(string)
-
-	data, err := gulu.JSON.MarshalJSON(attrView)
+	view, err := attrView.GetView()
 	if nil != err {
 		return
 	}
 
-	if err = gulu.JSON.UnmarshalJSON(data, attrView); nil != err {
-		return
-	}
+	attrView.Name = operation.Data.(string)
+	view.Name = operation.Data.(string)
 
 	err = av.SaveAttributeView(attrView)
 	return
@@ -454,13 +578,13 @@ func addAttributeViewBlock(blockID string, operation *Operation, tree *parse.Tre
 	if !operation.IsDetached {
 		attrs := parse.IAL2Map(node.KramdownIAL)
 
-		if "" == attrs[NodeAttrNameAvs] {
-			attrs[NodeAttrNameAvs] = operation.AvID
+		if "" == attrs[av.NodeAttrNameAvs] {
+			attrs[av.NodeAttrNameAvs] = operation.AvID
 		} else {
-			avIDs := strings.Split(attrs[NodeAttrNameAvs], ",")
+			avIDs := strings.Split(attrs[av.NodeAttrNameAvs], ",")
 			avIDs = append(avIDs, operation.AvID)
 			avIDs = gulu.Str.RemoveDuplicatedElem(avIDs)
-			attrs[NodeAttrNameAvs] = strings.Join(avIDs, ",")
+			attrs[av.NodeAttrNameAvs] = strings.Join(avIDs, ",")
 		}
 
 		if err = setNodeAttrsWithTx(tx, node, tree, attrs); nil != err {
@@ -528,15 +652,15 @@ func (tx *Transaction) removeAttributeViewBlock(operation *Operation) (err error
 								node.RemoveIALAttr("custom-hidden")
 							}
 
-							if avs := attrs[NodeAttrNameAvs]; "" != avs {
+							if avs := attrs[av.NodeAttrNameAvs]; "" != avs {
 								avIDs := strings.Split(avs, ",")
 								avIDs = gulu.Str.RemoveElem(avIDs, operation.AvID)
 								if 0 == len(avIDs) {
-									delete(attrs, NodeAttrNameAvs)
-									node.RemoveIALAttr(NodeAttrNameAvs)
+									delete(attrs, av.NodeAttrNameAvs)
+									node.RemoveIALAttr(av.NodeAttrNameAvs)
 								} else {
-									attrs[NodeAttrNameAvs] = strings.Join(avIDs, ",")
-									node.SetIALAttr(NodeAttrNameAvs, strings.Join(avIDs, ","))
+									attrs[av.NodeAttrNameAvs] = strings.Join(avIDs, ",")
+									node.SetIALAttr(av.NodeAttrNameAvs, strings.Join(avIDs, ","))
 								}
 							}
 
@@ -651,6 +775,31 @@ func setAttributeViewColHidden(operation *Operation) (err error) {
 				column.Hidden = operation.Data.(bool)
 				break
 			}
+		}
+	}
+
+	err = av.SaveAttributeView(attrView)
+	return
+}
+
+func (tx *Transaction) doSetAttrViewColumnIcon(operation *Operation) (ret *TxErr) {
+	err := setAttributeViewColIcon(operation)
+	if nil != err {
+		return &TxErr{code: TxErrWriteAttributeView, id: operation.AvID, msg: err.Error()}
+	}
+	return
+}
+
+func setAttributeViewColIcon(operation *Operation) (err error) {
+	attrView, err := av.ParseAttributeView(operation.AvID)
+	if nil != err {
+		return
+	}
+
+	for _, keyValues := range attrView.KeyValues {
+		if keyValues.Key.ID == operation.ID {
+			keyValues.Key.Icon = operation.Data.(string)
+			break
 		}
 	}
 
@@ -775,13 +924,46 @@ func addAttributeViewColumn(operation *Operation) (err error) {
 
 	keyType := av.KeyType(operation.Typ)
 	switch keyType {
-	case av.KeyTypeText, av.KeyTypeNumber, av.KeyTypeDate, av.KeyTypeSelect, av.KeyTypeMSelect, av.KeyTypeURL, av.KeyTypeEmail, av.KeyTypePhone, av.KeyTypeMAsset:
-		key := av.NewKey(operation.ID, operation.Name, keyType)
+	case av.KeyTypeText, av.KeyTypeNumber, av.KeyTypeDate, av.KeyTypeSelect, av.KeyTypeMSelect, av.KeyTypeURL, av.KeyTypeEmail, av.KeyTypePhone, av.KeyTypeMAsset, av.KeyTypeTemplate:
+		var icon string
+		if nil != operation.Data {
+			icon = operation.Data.(string)
+		}
+		key := av.NewKey(operation.ID, operation.Name, icon, keyType)
 		attrView.KeyValues = append(attrView.KeyValues, &av.KeyValues{Key: key})
 
 		switch view.LayoutType {
 		case av.LayoutTypeTable:
 			view.Table.Columns = append(view.Table.Columns, &av.ViewTableColumn{ID: key.ID})
+		}
+	}
+
+	err = av.SaveAttributeView(attrView)
+	return
+}
+
+func (tx *Transaction) doUpdateAttrViewColTemplate(operation *Operation) (ret *TxErr) {
+	err := updateAttributeViewColTemplate(operation)
+	if nil != err {
+		return &TxErr{code: TxErrWriteAttributeView, id: operation.AvID, msg: err.Error()}
+	}
+	return
+}
+
+func updateAttributeViewColTemplate(operation *Operation) (err error) {
+	attrView, err := av.ParseAttributeView(operation.AvID)
+	if nil != err {
+		return
+	}
+
+	colType := av.KeyType(operation.Typ)
+	switch colType {
+	case av.KeyTypeTemplate:
+		for _, keyValues := range attrView.KeyValues {
+			if keyValues.Key.ID == operation.ID && av.KeyTypeTemplate == keyValues.Key.Type {
+				keyValues.Key.Template = operation.Data.(string)
+				break
+			}
 		}
 	}
 
@@ -834,7 +1016,7 @@ func updateAttributeViewColumn(operation *Operation) (err error) {
 
 	colType := av.KeyType(operation.Typ)
 	switch colType {
-	case av.KeyTypeBlock, av.KeyTypeText, av.KeyTypeNumber, av.KeyTypeDate, av.KeyTypeSelect, av.KeyTypeMSelect, av.KeyTypeURL, av.KeyTypeEmail, av.KeyTypePhone, av.KeyTypeMAsset:
+	case av.KeyTypeBlock, av.KeyTypeText, av.KeyTypeNumber, av.KeyTypeDate, av.KeyTypeSelect, av.KeyTypeMSelect, av.KeyTypeURL, av.KeyTypeEmail, av.KeyTypePhone, av.KeyTypeMAsset, av.KeyTypeTemplate:
 		for _, keyValues := range attrView.KeyValues {
 			if keyValues.Key.ID == operation.ID {
 				keyValues.Key.Name = operation.Name
@@ -1006,17 +1188,17 @@ func bindBlockAv(tx *Transaction, avID, blockID string) {
 	}
 
 	attrs := parse.IAL2Map(node.KramdownIAL)
-	if "" == attrs[NodeAttrNameAvs] {
-		attrs[NodeAttrNameAvs] = avID
+	if "" == attrs[av.NodeAttrNameAvs] {
+		attrs[av.NodeAttrNameAvs] = avID
 	} else {
-		avIDs := strings.Split(attrs[NodeAttrNameAvs], ",")
+		avIDs := strings.Split(attrs[av.NodeAttrNameAvs], ",")
 		if gulu.Str.Contains(avID, avIDs) {
 			return
 		}
 
 		avIDs = append(avIDs, avID)
 		avIDs = gulu.Str.RemoveDuplicatedElem(avIDs)
-		attrs[NodeAttrNameAvs] = strings.Join(avIDs, ",")
+		attrs[av.NodeAttrNameAvs] = strings.Join(avIDs, ",")
 	}
 
 	if nil != tx {
@@ -1192,7 +1374,3 @@ func updateAttributeViewColumnOption(operation *Operation) (err error) {
 	err = av.SaveAttributeView(attrView)
 	return
 }
-
-const (
-	NodeAttrNameAvs = "custom-avs" // 用于标记块所属的属性视图，逗号分隔 av id
-)

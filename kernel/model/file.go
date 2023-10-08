@@ -1028,7 +1028,7 @@ func CreateDocByMd(boxID, p, title, md string, sorts []string) (tree *parse.Tree
 	return
 }
 
-func CreateWithMarkdown(boxID, hPath, md, parentID, id string) (err error) {
+func CreateWithMarkdown(boxID, hPath, md, parentID, id string) (retID string, err error) {
 	box := Conf.Box(boxID)
 	if nil == box {
 		err = errors.New(Conf.Language(0))
@@ -1038,7 +1038,7 @@ func CreateWithMarkdown(boxID, hPath, md, parentID, id string) (err error) {
 	WaitForWritingFiles()
 	luteEngine := util.NewLute()
 	dom := luteEngine.Md2BlockDOM(md, false)
-	_, _, err = createDocsByHPath(box.ID, hPath, dom, parentID, id)
+	retID, err = createDocsByHPath(box.ID, hPath, dom, parentID, id)
 	return
 }
 
@@ -1124,14 +1124,21 @@ func MoveDocs(fromPaths []string, toBoxID, toPath string, callback interface{}) 
 		}
 	}
 
+	// A progress layer appears when moving more than 16 documents at once https://github.com/siyuan-note/siyuan/issues/9356
 	needShowProgress := 16 < len(fromPaths)
 	if needShowProgress {
-		util.PushEndlessProgress(Conf.Language(116))
+		defer util.PushClearProgress()
 	}
 
 	WaitForWritingFiles()
 	luteEngine := util.NewLute()
+	count := 0
 	for fromPath, fromBox := range pathsBoxes {
+		count++
+		if needShowProgress {
+			util.PushEndlessProgress(fmt.Sprintf(Conf.Language(70), fmt.Sprintf("%d/%d", count, len(fromPaths))))
+		}
+
 		_, err = moveDoc(fromBox, fromPath, toBox, toPath, luteEngine, callback)
 		if nil != err {
 			return
@@ -1139,12 +1146,6 @@ func MoveDocs(fromPaths []string, toBoxID, toPath string, callback interface{}) 
 	}
 	cache.ClearDocsIAL()
 	IncSync()
-
-	if needShowProgress {
-		util.PushEndlessProgress(Conf.Language(113))
-		sql.WaitForWritingDatabase()
-		util.ReloadUI()
-	}
 	return
 }
 
@@ -1442,7 +1443,7 @@ func CreateDailyNote(boxID string) (p string, existed bool, err error) {
 		return
 	}
 
-	id, existed, err := createDocsByHPath(box.ID, hPath, "", "", "")
+	id, err := createDocsByHPath(box.ID, hPath, "", "", "")
 	if nil != err {
 		return
 	}

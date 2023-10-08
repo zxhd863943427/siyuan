@@ -101,6 +101,7 @@ export class Breadcrumb {
                     this.showMenu(protyle, {
                         x: targetRect.right,
                         y: targetRect.bottom,
+                        isLeft: true,
                     });
                     event.stopPropagation();
                     event.preventDefault();
@@ -240,7 +241,7 @@ export class Breadcrumb {
         }
     }
 
-    public showMenu(protyle: IProtyle, position: { x: number, y: number }) {
+    public showMenu(protyle: IProtyle, position:IPosition) {
         if (!window.siyuan.menus.menu.element.classList.contains("fn__none") &&
             window.siyuan.menus.menu.element.getAttribute("data-name") === "breadcrumbMore") {
             window.siyuan.menus.menu.remove();
@@ -541,7 +542,7 @@ export class Breadcrumb {
             /// #if MOBILE
             window.siyuan.menus.menu.fullscreen();
             /// #else
-            window.siyuan.menus.menu.popup(position, true);
+            window.siyuan.menus.menu.popup(position);
             /// #endif
         });
     }

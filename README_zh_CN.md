@@ -133,7 +133,8 @@
 
 构建 Docker 镜像时设置了入口：`ENTRYPOINT [ "/opt/siyuan/kernel" ]`，使用 `docker run b3log/siyuan` 并带参即可启动：
 
-* `--workspace` 指定工作空间文件夹路径，在宿主机上通过 `-v` 挂载到容器中
+* `--workspace`：指定工作空间文件夹路径，在宿主机上通过 `-v` 挂载到容器中
+* `--accessAuthCode`：指定访问授权码
 
 更多的参数可参考 `--help`。下面是一条启动命令示例：
 
@@ -237,7 +238,7 @@ docker run -v /siyuan/workspace:/siyuan/workspace -p 6806:6806 -u 1000:1000 b3lo
 * 如果是桌面端通过安装包安装的，可打开 <kbd>设置</kbd> - <kbd>关于</kbd> - <kbd>自动下载更新安装包</kbd> 选项，这样思源会自动下载最新版安装包并提示安装
 * 如果是通过手动安装包安装的，请再次下载安装包安装
 
-可在 <kbd>设置</kbd> - <kbd>关于</kbd> - <kbd>当前版本</kbd> 中 <kbd>检查更新</kbd>，也可以通过关注[官方网站](https://b3log.org/siyuan/)或者 [GitHub Releases](https://github.com/siyuan-note/siyuan/releases) 来获取新版本。
+可在 <kbd>设置</kbd> - <kbd>关于</kbd> - <kbd>当前版本</kbd> 中 <kbd>检查更新</kbd>，也可以通过关注[官方下载](https://b3log.org/siyuan/download.html)或者 [GitHub Releases](https://github.com/siyuan-note/siyuan/releases) 来获取新版本。
 
 **注意**：切勿将工作空间放置于安装目录下，因为更新版本会清空安装目录下的所有文件
 

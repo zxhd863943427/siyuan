@@ -21,10 +21,10 @@ const getSlashItem = (value: string, icon: string, text: string, focus = "false"
     } else {
         iconHTML = icon;
     }
-    return `<div class="keyboard__slash-item" data-focus="${focus}" data-value="${encodeURIComponent(value)}">
+    return `<button class="keyboard__slash-item" data-focus="${focus}" data-value="${encodeURIComponent(value)}">
     ${iconHTML}
     <span class="keyboard__slash-text">${text}</span>
-</div>`;
+</button>`;
 };
 
 export const renderTextMenu = (protyle: IProtyle, toolbarElement: Element) => {
@@ -500,9 +500,9 @@ export const initKeyboardToolbar = () => {
 </div>
 <div class="keyboard__util"></div>`;
     toolbarElement.addEventListener("click", (event) => {
+        const protyle = getCurrentEditor()?.protyle;
         const target = event.target as HTMLElement;
         const slashBtnElement = hasClosestByClassName(event.target as HTMLElement, "keyboard__slash-item");
-        const protyle = getCurrentEditor()?.protyle;
         if (slashBtnElement && !slashBtnElement.getAttribute("data-type")) {
             const dataValue = decodeURIComponent(slashBtnElement.getAttribute("data-value"));
             protyle.hint.fill(dataValue, protyle, false);   // 点击后 range 会改变
@@ -635,7 +635,8 @@ export const initKeyboardToolbar = () => {
         } else if (type === "more") {
             protyle.breadcrumb.showMenu(protyle, {
                 x: 0,
-                y: 0
+                y: 0,
+                isLeft: true
             });
             activeBlur();
             hideKeyboardToolbar();
