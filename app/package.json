@@ -1,6 +1,6 @@
 {
   "name": "SiYuan",
-  "version": "2.10.8",
+  "version": "2.10.10",
   "description": "Refactor your thinking",
   "homepage": "https://b3log.org/siyuan",
   "main": "./electron/main.js",
@@ -74,6 +74,6 @@
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
-    "@electron/remote": "^2.0.11"
+    "@electron/remote": "^2.0.12"
   }
 }

@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@electron/remote':
-    specifier: ^2.0.11
-    version: 2.0.11(electron@25.9.0)
+    specifier: ^2.0.12
+    version: 2.0.12(electron@25.9.0)
 
 devDependencies:
   '@types/node':
@@ -160,8 +160,8 @@ packages:
       - supports-color
     dev: true
 
-  /@electron/remote@2.0.11(electron@25.9.0):
-    resolution: {integrity: sha512-PYEs7W3GrQNuhgiMHjFEvL5MbAL6C7m1AwSAHGqC+xc33IdP7rcGtJSdTP2eg1ssyB3oI00KwTsiSlsQbAoXpA==}
+  /@electron/remote@2.0.12(electron@25.9.0):
+    resolution: {integrity: sha512-IJN6xLAxptq5MCvXNCU6+pdQyz0DjpPtX6g2TPJftu3Z9pU6BTdnos9ZMN8nK471LkASqiA6C+Hzjv5SS8PAQw==}
     peerDependencies:
       electron: '>= 13.0.0'
     dependencies:
