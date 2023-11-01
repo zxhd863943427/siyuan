@@ -46,6 +46,45 @@ type AttributeView struct {
 	Views     []*View      `json:"views"`     // 视图
 }
 
+func ShallowCloneAttributeView(av *AttributeView) (ret *AttributeView) {
+	ret = &AttributeView{}
+	data, err := gulu.JSON.MarshalJSON(av)
+	if nil != err {
+		logging.LogErrorf("marshal attribute view [%s] failed: %s", av.ID, err)
+		return nil
+	}
+	if err = gulu.JSON.UnmarshalJSON(data, ret); nil != err {
+		logging.LogErrorf("unmarshal attribute view [%s] failed: %s", av.ID, err)
+		return nil
+	}
+
+	ret.ID = ast.NewNodeID()
+	view, err := ret.GetView()
+	if nil == err {
+		view.ID = ast.NewNodeID()
+		ret.ViewID = view.ID
+	} else {
+		view = NewView()
+		ret.ViewID = view.ID
+		ret.Views = append(ret.Views, view)
+	}
+
+	keyIDMap := map[string]string{}
+	for _, kv := range ret.KeyValues {
+		newID := ast.NewNodeID()
+		keyIDMap[kv.Key.ID] = newID
+		kv.Key.ID = newID
+		kv.Values = []*Value{}
+	}
+
+	view.Table.ID = ast.NewNodeID()
+	for _, column := range view.Table.Columns {
+		column.ID = keyIDMap[column.ID]
+	}
+	view.Table.RowIDs = []string{}
+	return
+}
+
 // KeyValues 描述了属性视图属性列值的结构。
 type KeyValues struct {
 	Key    *Key     `json:"key"`              // 属性视图属性列
@@ -325,6 +364,7 @@ type ValueDate struct {
 	Content          int64  `json:"content"`
 	IsNotEmpty       bool   `json:"isNotEmpty"`
 	HasEndDate       bool   `json:"hasEndDate"`
+	IsNotTime        bool   `json:"isNotTime"`
 	Content2         int64  `json:"content2"`
 	IsNotEmpty2      bool   `json:"isNotEmpty2"`
 	FormattedContent string `json:"formattedContent"`
@@ -337,10 +377,21 @@ const (
 	DateFormatDuration DateFormat = "duration"
 )
 
-func NewFormattedValueDate(content, content2 int64, format DateFormat) (ret *ValueDate) {
-	formatted := time.UnixMilli(content).Format("2006-01-02 15:04")
+func NewFormattedValueDate(content, content2 int64, format DateFormat, isNotTime bool) (ret *ValueDate) {
+	var formatted string
+	if isNotTime {
+		formatted = time.UnixMilli(content).Format("2006-01-02")
+	} else {
+		formatted = time.UnixMilli(content).Format("2006-01-02 15:04")
+	}
 	if 0 < content2 {
-		formatted += " → " + time.UnixMilli(content2).Format("2006-01-02 15:04")
+		var formattedContent2 string
+		if isNotTime {
+			formattedContent2 = time.UnixMilli(content2).Format("2006-01-02")
+		} else {
+			formattedContent2 = time.UnixMilli(content2).Format("2006-01-02 15:04")
+		}
+		formatted += " → " + formattedContent2
 	}
 	switch format {
 	case DateFormatNone:
@@ -353,6 +404,7 @@ func NewFormattedValueDate(content, content2 int64, format DateFormat) (ret *Val
 		Content:          content,
 		Content2:         content2,
 		HasEndDate:       false,
+		IsNotTime:        true,
 		FormattedContent: formatted,
 	}
 	return

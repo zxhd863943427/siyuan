@@ -68,12 +68,11 @@ import {getSavePath} from "../../util/newFile";
 import {escapeHtml} from "../../util/escape";
 import {insertHTML} from "../util/insertHTML";
 import {removeSearchMark} from "../toolbar/util";
-import {copyPNG} from "../../menus/util";
 import {avKeydown} from "../render/av/keydown";
 import {resizeAV} from "../util/resize";
 
 
-const getContentByInlineHTML = (range: Range, cb: (content: string) => void) => {
+export const getContentByInlineHTML = (range: Range, cb: (content: string) => void) => {
     let html = "";
     Array.from(range.cloneContents().childNodes).forEach((item: HTMLElement) => {
         if (item.nodeType === 3) {
@@ -998,7 +997,7 @@ export const keydown = (protyle: IProtyle, editorElement: HTMLElement) => {
             if (selectText !== "") {
                 // 和复制块引用保持一致 https://github.com/siyuan-note/siyuan/issues/9093
                 getContentByInlineHTML(range, (content) => {
-                    writeText(`${Lute.EscapeHTMLStr(content.trim())} ((${nodeElement.getAttribute("data-node-id")} "*"))`);
+                    writeText(`${content.trim()} ((${nodeElement.getAttribute("data-node-id")} "*"))`);
                 });
             } else {
                 nodeElement.setAttribute("data-reftext", "true");
@@ -1007,33 +1006,6 @@ export const keydown = (protyle: IProtyle, editorElement: HTMLElement) => {
             }
             event.preventDefault();
             event.stopPropagation();
-            return true;
-        }
-        if (matchHotKey(window.siyuan.config.keymap.editor.general.copyBlockRef.custom, event)) {
-            event.preventDefault();
-            event.stopPropagation();
-            const selectElements = protyle.wysiwyg.element.querySelectorAll(".protyle-wysiwyg--select");
-            let actionElement;
-            if (selectElements.length === 1) {
-                actionElement = selectElements[0];
-            } else {
-                const selectImgElement = nodeElement.querySelector(".img--select");
-                if (selectImgElement) {
-                    copyPNG(selectImgElement.querySelector("img"));
-                    return true;
-                }
-                actionElement = nodeElement;
-            }
-            const actionElementId = actionElement.getAttribute("data-node-id");
-            if (selectText !== "") {
-                getContentByInlineHTML(range, (content) => {
-                    writeText(`((${actionElementId} "${Lute.EscapeHTMLStr(content.trim())}"))`);
-                });
-            } else {
-                fetchPost("/api/block/getRefText", {id: actionElementId}, (response) => {
-                    writeText(`((${actionElementId} '${response.data}'))`);
-                });
-            }
             return true;
         }
         if (matchHotKey(window.siyuan.config.keymap.editor.general.copyBlockEmbed.custom, event)) {
@@ -1064,14 +1036,13 @@ export const keydown = (protyle: IProtyle, editorElement: HTMLElement) => {
             } else {
                 getContentByInlineHTML(range, (content) => {
                     const oldHTML = topElement.outerHTML;
-                    const name = Lute.EscapeHTMLStr(content.trim());
                     const nameElement = topElement.lastElementChild.querySelector(".protyle-attr--name");
                     if (nameElement) {
-                        nameElement.innerHTML = `<svg><use xlink:href="#iconN"></use></svg>${name}`;
+                        nameElement.innerHTML = `<svg><use xlink:href="#iconN"></use></svg>${content.trim()}`;
                     } else {
-                        topElement.lastElementChild.insertAdjacentHTML("afterbegin", `<div class="protyle-attr--name"><svg><use xlink:href="#iconN"></use></svg>${name}</div>`);
+                        topElement.lastElementChild.insertAdjacentHTML("afterbegin", `<div class="protyle-attr--name"><svg><use xlink:href="#iconN"></use></svg>${content.trim()}</div>`);
                     }
-                    topElement.setAttribute("name", name);
+                    topElement.setAttribute("name", content.trim());
                     updateTransaction(protyle, topElement.getAttribute("data-node-id"), topElement.outerHTML, oldHTML);
                 });
             }
@@ -1176,7 +1147,7 @@ export const keydown = (protyle: IProtyle, editorElement: HTMLElement) => {
                 }
                 updateBatchTransaction(selectElements, protyle, (e: HTMLElement) => {
                     if (e.classList.contains("av")) {
-                        e.style.margin = ""
+                        e.style.margin = "";
                         resizeAV(e);
                     } else {
                         e.style.textAlign = "left";
@@ -1198,7 +1169,7 @@ export const keydown = (protyle: IProtyle, editorElement: HTMLElement) => {
                 }
                 updateBatchTransaction(selectElements, protyle, (e: HTMLElement) => {
                     if (e.classList.contains("av")) {
-                        e.style.margin = "0 auto"
+                        e.style.margin = "0 auto";
                         resizeAV(e);
                     } else {
                         e.style.textAlign = "center";

@@ -27,7 +27,7 @@ export const selectRow = (checkElement: Element, type: "toggle" | "select" | "un
     }
     focusBlock(hasClosestBlock(rowElement) as HTMLElement);
     updateHeader(rowElement);
-}
+};
 
 export const updateHeader = (rowElement: HTMLElement) => {
     const blockElement = hasClosestBlock(rowElement);
@@ -62,7 +62,7 @@ export const insertAttrViewBlockAnimation = (blockElement: Element, size: number
     const previousElement = blockElement.querySelector(`.av__row[data-id="${previousId}"]`) || blockElement.querySelector(".av__row--header");
     let colHTML = "";
     previousElement.querySelectorAll(".av__cell").forEach((item: HTMLElement) => {
-        colHTML += `<div class="av__cell" style="width: ${item.style.width}" ${item.getAttribute("data-block-id") ? ' data-detached="true"' : ""}><span class="av__pulse"></span></div>`;
+        colHTML += `<div class="av__cell" style="width: ${item.style.width}" ${(item.getAttribute("data-block-id") || item.dataset.dtype === "block") ? ' data-detached="true"' : ""}><span class="av__pulse"></span></div>`;
     });
 
     let html = "";

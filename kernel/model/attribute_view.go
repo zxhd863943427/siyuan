@@ -167,8 +167,13 @@ func RenderAttributeView(avID string) (viewable av.Viewable, attrView *av.Attrib
 	}
 
 	if 1 > len(attrView.Views) {
-		err = av.ErrViewNotFound
-		return
+		view := av.NewView()
+		attrView.Views = append(attrView.Views, view)
+		attrView.ViewID = view.ID
+		if err = av.SaveAttributeView(attrView); nil != err {
+			logging.LogErrorf("save attribute view [%s] failed: %s", avID, err)
+			return
+		}
 	}
 
 	var view *av.View
@@ -409,6 +414,8 @@ func renderAttributeViewTable(attrView *av.AttributeView, view *av.View) (ret *a
 			case av.KeyTypeUpdated: // 填充更新时间列值，后面再渲染
 				tableCell.Value = &av.Value{ID: tableCell.ID, KeyID: col.ID, BlockID: rowID, Type: av.KeyTypeUpdated}
 			}
+
+			treenode.FillAttributeViewTableCellNilValue(tableCell, rowID, col.ID)
 
 			tableRow.Cells = append(tableRow.Cells, tableCell)
 		}

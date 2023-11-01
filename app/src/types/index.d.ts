@@ -51,7 +51,8 @@ type TEventBus = "ws-main" |
     "open-siyuan-url-plugin" | "open-siyuan-url-block" |
     "paste" |
     "input-search" |
-    "loaded-protyle" | "loaded-protyle-dynamic" |
+    "loaded-protyle" | "loaded-protyle-dynamic" | "loaded-protyle-static" |
+    "switch-protyle" |
     "destroy-protyle"
 type TAVCol =
     "text"
@@ -496,6 +497,11 @@ interface IPluginDockTab {
     title: string,
     index?: number
     show?: boolean
+}
+
+interface IExportOptions {
+    type: string,
+    id: string,
 }
 
 interface IOpenFileOptions {
@@ -1092,6 +1098,7 @@ interface IAVCellDateValue {
     content2?: number,
     isNotEmpty2?: boolean
     hasEndDate?: boolean
+    isNotTime?: boolean // 默认 true
 }
 
 interface IAVCellSelectValue {

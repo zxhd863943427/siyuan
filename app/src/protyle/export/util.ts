@@ -29,7 +29,9 @@ export const exportImage = (id: string) => {
     const exportDialog = new Dialog({
         title: window.siyuan.languages.exportAsImage,
         content: `<div class="b3-dialog__content" style="${isMobile() ? "padding:8px;" : ""};background-color: var(--b3-theme-background)">
-    <div style="${isMobile() ? "padding: 16px;margin: 16px 0" : "padding: 48px;margin: 8px 0 24px"};border: 1px solid var(--b3-border-color);border-radius: var(--b3-border-radius-b);" class="export-img protyle-wysiwyg${window.siyuan.config.editor.displayBookmarkIcon ? " protyle-wysiwyg--attr" : ""}" id="preview"></div>
+    <div style="${isMobile() ? "padding: 16px;margin: 16px 0" : "padding: 48px;margin: 8px 0 24px"};border: 1px solid var(--b3-border-color);border-radius: var(--b3-border-radius-b);" 
+class="export-img protyle-wysiwyg${window.siyuan.config.editor.displayBookmarkIcon ? " protyle-wysiwyg--attr" : ""}" 
+id="preview"></div>
     <div class="fn__hr--b"></div>
     <div class="fn__hr--b"></div>
 </div>
@@ -89,6 +91,19 @@ export const exportImage = (id: string) => {
     });
     const refreshPreview = (response: IWebSocketData) => {
         previewElement.innerHTML = response.data.content;
+        previewElement.setAttribute("data-doc-type", response.data.type || "NodeDocument");
+        if (response.data.attrs.memo) {
+            previewElement.setAttribute("memo", response.data.attrs.memo);
+        }
+        if (response.data.attrs.name) {
+            previewElement.setAttribute("name", response.data.attrs.name);
+        }
+        if (response.data.attrs.bookmark) {
+            previewElement.setAttribute("bookmark", response.data.attrs.bookmark);
+        }
+        if (response.data.attrs.alias) {
+            previewElement.setAttribute("alias", response.data.attrs.alias);
+        }
         processRender(previewElement);
         highlightRender(previewElement);
         previewElement.querySelectorAll("table").forEach((item: HTMLElement) => {

@@ -1,4 +1,5 @@
-import {exportLayout, JSONToLayout, resetLayout, resizeTopbar, resizeTabs} from "../layout/util";
+import {exportLayout, JSONToLayout, resetLayout, resizeTopBar} from "../layout/util";
+import {resizeTabs} from "../layout/tabUtil";
 import {setStorageVal} from "../protyle/util/compatibility";
 /// #if !BROWSER
 import {ipcRenderer, webFrame} from "electron";
@@ -139,14 +140,14 @@ export const onGetConfig = (isStart: boolean, app: App) => {
     initWindow(app);
     appearance.onSetappearance(window.siyuan.config.appearance);
     initAssets();
-    renderSnippet();
     setInlineStyle();
+    renderSnippet();
     let resizeTimeout = 0;
     window.addEventListener("resize", () => {
         window.clearTimeout(resizeTimeout);
         resizeTimeout = window.setTimeout(() => {
             resizeTabs();
-            resizeTopbar();
+            resizeTopBar();
         }, 200);
     });
     addGA();
@@ -170,6 +171,19 @@ const winOnMaxRestore = async () => {
         maxBtnElement.style.display = "flex";
     }
     /// #endif
+};
+
+const saveUI = () => {
+    exportLayout({
+        reload: false,
+        onlyData: false,
+        errorExit: false
+    });
+};
+
+export const unbindSaveUI = () => {
+    window.removeEventListener("beforeunload", saveUI);
+    window.removeEventListener("pagehide", saveUI);
 };
 
 export const initWindow = async (app: App) => {
@@ -509,19 +523,7 @@ ${response.data.replace("%pages", "<span class=totalPages></span>").replace("%pa
     if (!isWindow()) {
         document.querySelector(".toolbar").classList.add("toolbar--browser");
     }
-    window.addEventListener("beforeunload", () => {
-        exportLayout({
-            reload: false,
-            onlyData: false,
-            errorExit: false
-        });
-    }, false);
-    window.addEventListener("pagehide", () => {
-        exportLayout({
-            reload: false,
-            onlyData: false,
-            errorExit: false
-        });
-    }, false);
+    window.addEventListener("beforeunload", saveUI, false);
+    window.addEventListener("pagehide", saveUI, false);
     /// #endif
 };
