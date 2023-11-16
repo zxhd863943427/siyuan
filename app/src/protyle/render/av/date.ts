@@ -2,13 +2,14 @@ import {transaction} from "../../wysiwyg/transaction";
 import * as dayjs from "dayjs";
 import {updateAttrViewCellAnimation} from "./action";
 import {genAVValueHTML} from "./blockAttr";
+import {hasClosestByClassName} from "../../util/hasClosest";
 
 export const getDateHTML = (data: IAVTable, cellElements: HTMLElement[]) => {
     let hasEndDate = true;
     let cellValue: IAVCell;
     cellElements.forEach((cellElement) => {
         data.rows.find(row => {
-            if (cellElement.parentElement.dataset.id === row.id) {
+            if ((hasClosestByClassName(cellElement, "av__row") as HTMLElement).dataset.id === row.id) {
                 row.cells.find(cell => {
                     if (cell.id === cellElement.dataset.id) {
                         if (!cell.value || !cell.value.date || !cell.value.date.hasEndDate) {
@@ -25,18 +26,19 @@ export const getDateHTML = (data: IAVTable, cellElements: HTMLElement[]) => {
     if (!cellValue) {
         hasEndDate = false;
     }
+    const isNotTime = !cellValue || cellValue?.value?.date?.isNotTime;
     let value = "";
     if (cellValue?.value?.date?.isNotEmpty) {
-        value = dayjs(cellValue.value.date.content).format(cellValue.value.date.isNotTime ? "YYYY-MM-DD" : "YYYY-MM-DD HH:mm");
+        value = dayjs(cellValue.value.date.content).format(isNotTime ? "YYYY-MM-DD" : "YYYY-MM-DD HH:mm");
     }
     let value2 = "";
     if (cellValue?.value?.date?.isNotEmpty2) {
-        value2 = dayjs(cellValue.value.date.content2).format(cellValue.value.date.isNotTime ? "YYYY-MM-DD" : "YYYY-MM-DD HH:mm");
+        value2 = dayjs(cellValue.value.date.content2).format(isNotTime ? "YYYY-MM-DD" : "YYYY-MM-DD HH:mm");
     }
     return `<div class="b3-menu__items">
 <div>
-    <input type="${(!cellValue || cellValue?.value?.date?.isNotTime) ? "date" : "datetime-local"}" value="${value}" data-value="${value ? dayjs(cellValue.value.date.content).format("YYYY-MM-DD HH:mm") : ""}" class="b3-text-field fn__size200"><br>
-    <input type="${(!cellValue || cellValue?.value?.date?.isNotTime) ? "date" : "datetime-local"}" value="${value2}" data-value="${value2 ? dayjs(cellValue.value.date.content2).format("YYYY-MM-DD HH:mm") : ""}" style="margin-top: 8px" class="b3-text-field fn__size200${hasEndDate ? "" : " fn__none"}">
+    <input type="${isNotTime ? "date" : "datetime-local"}" max="${isNotTime ? "9999-12-31" : "9999-12-31 23:59"}" value="${value}" data-value="${value ? dayjs(cellValue.value.date.content).format("YYYY-MM-DD HH:mm") : ""}" class="b3-text-field fn__size200"><br>
+    <input type="${isNotTime ? "date" : "datetime-local"}" max="${isNotTime ? "9999-12-31" : "9999-12-31 23:59"}" value="${value2}" data-value="${value2 ? dayjs(cellValue.value.date.content2).format("YYYY-MM-DD HH:mm") : ""}" style="margin-top: 8px" class="b3-text-field fn__size200${hasEndDate ? "" : " fn__none"}">
     <button class="b3-menu__separator"></button>
     <label class="b3-menu__item">
         <span>${window.siyuan.languages.endDate}</span>
@@ -46,7 +48,7 @@ export const getDateHTML = (data: IAVTable, cellElements: HTMLElement[]) => {
     <label class="b3-menu__item">
         <span>${window.siyuan.languages.includeTime}</span>
         <span class="fn__space fn__flex-1"></span>
-        <input type="checkbox" class="b3-switch fn__flex-center"${(!cellValue || cellValue?.value?.date?.isNotTime) ? "" : " checked"}>
+        <input type="checkbox" class="b3-switch fn__flex-center"${isNotTime ? "" : " checked"}>
     </label>
     <button class="b3-menu__separator"></button>
     <button class="b3-menu__item" data-type="clearDate">
@@ -101,7 +103,8 @@ export const bindDateEvent = (options: {
             data: options.data,
             protyle: options.protyle,
             value: {
-                hasEndDate: inputElements[2].checked
+                hasEndDate: inputElements[2].checked,
+                isNotTime: !inputElements[3].checked
             }
         });
     });
@@ -109,11 +112,15 @@ export const bindDateEvent = (options: {
         if (inputElements[3].checked) {
             inputElements[0].setAttribute("type", "datetime-local");
             inputElements[1].setAttribute("type", "datetime-local");
+            inputElements[0].setAttribute("max", "9999-12-31 23:59");
+            inputElements[1].setAttribute("max", "9999-12-31 23:59");
             inputElements[0].value = inputElements[0].dataset.value;
             inputElements[1].value = inputElements[1].dataset.value;
         } else {
             inputElements[0].setAttribute("type", "date");
             inputElements[1].setAttribute("type", "date");
+            inputElements[0].setAttribute("max", "9999-12-31");
+            inputElements[1].setAttribute("max", "9999-12-31");
             inputElements[0].value = inputElements[0].dataset.value.substring(0, 10);
             inputElements[1].value = inputElements[1].dataset.value.substring(0, 10);
         }
@@ -135,7 +142,7 @@ export const setDateValue = (options: {
     value: IAVCellDateValue
 }) => {
     let cellIndex: number;
-    Array.from(options.cellElements[0].parentElement.querySelectorAll(".av__cell")).find((item: HTMLElement, index) => {
+    Array.from((hasClosestByClassName(options.cellElements[0], "av__row") as HTMLElement).querySelectorAll(".av__cell")).find((item: HTMLElement, index) => {
         if (item.dataset.id === options.cellElements[0].dataset.id) {
             cellIndex = index;
             return true;
@@ -147,7 +154,7 @@ export const setDateValue = (options: {
     options.cellElements.forEach(item => {
         let cellData: IAVCell;
         let oldValue;
-        const rowID = item.parentElement.dataset.id;
+        const rowID = (hasClosestByClassName(item, "av__row") as HTMLElement).dataset.id;
         options.data.view.rows.find(row => {
             if (row.id === rowID) {
                 if (typeof cellIndex === "number") {
@@ -156,6 +163,8 @@ export const setDateValue = (options: {
                     cellData.id = item.dataset.id;
                     if (!cellData.value) {
                         cellData.value = {};
+                    } else {
+                        cellData.value.id = item.dataset.id;
                     }
                 } else {
                     cellData = row.cells.find(cellItem => {

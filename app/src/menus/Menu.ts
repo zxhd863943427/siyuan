@@ -1,4 +1,4 @@
-import {getEventName, isCtrl, updateHotkeyTip} from "../protyle/util/compatibility";
+import {getEventName, updateHotkeyTip} from "../protyle/util/compatibility";
 import {setPosition} from "../util/setPosition";
 import {hasClosestByClassName} from "../protyle/util/hasClosest";
 import {isMobile} from "../util/functions";
@@ -234,6 +234,9 @@ export class MenuItem {
 const getActionMenu = (element: Element, next: boolean) => {
     let actionMenuElement = element;
     while (actionMenuElement && (actionMenuElement.classList.contains("b3-menu__separator") || actionMenuElement.classList.contains("b3-menu__item--readonly"))) {
+        if (actionMenuElement.querySelector(".b3-text-field")) {
+            break;
+        }
         if (next) {
             actionMenuElement = actionMenuElement.nextElementSibling;
         } else {
@@ -245,7 +248,7 @@ const getActionMenu = (element: Element, next: boolean) => {
 
 export const bindMenuKeydown = (event: KeyboardEvent) => {
     if (window.siyuan.menus.menu.element.classList.contains("fn__none")
-        || event.altKey || event.shiftKey || isCtrl(event)) {
+        || event.altKey || event.shiftKey || event.ctrlKey || event.metaKey) {
         return false;
     }
     const target = event.target as HTMLElement;
@@ -278,7 +281,6 @@ export const bindMenuKeydown = (event: KeyboardEvent) => {
         if (actionMenuElement) {
             actionMenuElement.classList.add("b3-menu__item--current");
             actionMenuElement.classList.remove("b3-menu__item--show");
-
             const parentRect = actionMenuElement.parentElement.getBoundingClientRect();
             const actionMenuRect = actionMenuElement.getBoundingClientRect();
             if (parentRect.top > actionMenuRect.top || parentRect.bottom < actionMenuRect.bottom) {

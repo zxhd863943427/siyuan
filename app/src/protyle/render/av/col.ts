@@ -175,7 +175,6 @@ export const getEditHTML = (options: {
     ${genUpdateColItem("number", colData.type, colData.name)}
     ${genUpdateColItem("select", colData.type, colData.name)}
     ${genUpdateColItem("mSelect", colData.type, colData.name)}
-    ${genUpdateColItem("mSelect", colData.type, colData.name)}
     ${genUpdateColItem("date", colData.type, colData.name)}
     ${genUpdateColItem("mAsset", colData.type, colData.name)}
     ${genUpdateColItem("url", colData.type, colData.name)}
@@ -578,6 +577,26 @@ export const showColMenu = (protyle: IProtyle, blockElement: Element, cellElemen
                 }]);
             }
         });
+    }
+    const isPin = cellElement.dataset.pin === "true";
+    menu.addItem({
+        icon: "iconPin",
+        label: isPin ? window.siyuan.languages.unfreezeCol : window.siyuan.languages.freezeCol,
+        click() {
+            transaction(protyle, [{
+                action: "setAttrViewColPin",
+                id: colId,
+                avID,
+                data: !isPin
+            }], [{
+                action: "setAttrViewColPin",
+                id: colId,
+                avID,
+                data: isPin
+            }]);
+        }
+    });
+    if (type !== "block") {
         menu.addItem({
             icon: "iconCopy",
             label: window.siyuan.languages.duplicate,

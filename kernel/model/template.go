@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/siyuan-note/siyuan/kernel/av"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -33,10 +32,11 @@ import (
 	"github.com/88250/lute/ast"
 	"github.com/88250/lute/parse"
 	"github.com/88250/lute/render"
-	sprig "github.com/Masterminds/sprig/v3"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/araddon/dateparse"
 	"github.com/siyuan-note/filelock"
 	"github.com/siyuan-note/logging"
+	"github.com/siyuan-note/siyuan/kernel/av"
 	"github.com/siyuan-note/siyuan/kernel/search"
 	"github.com/siyuan-note/siyuan/kernel/sql"
 	"github.com/siyuan-note/siyuan/kernel/treenode"
@@ -147,13 +147,32 @@ func DocSaveAsTemplate(id, name string, overwrite bool) (code int, err error) {
 	tree := prepareExportTree(bt)
 	addBlockIALNodes(tree, true)
 
+	ast.Walk(tree.Root, func(n *ast.Node, entering bool) ast.WalkStatus {
+		if !entering {
+			return ast.WalkContinue
+		}
+
+		// Code content in templates is not properly escaped https://github.com/siyuan-note/siyuan/issues/9649
+		switch n.Type {
+		case ast.NodeCodeBlockCode:
+			n.Tokens = bytes.ReplaceAll(n.Tokens, []byte("&quot;"), []byte("\""))
+		case ast.NodeCodeSpanContent:
+			n.Tokens = bytes.ReplaceAll(n.Tokens, []byte("&quot;"), []byte("\""))
+		case ast.NodeTextMark:
+			if n.IsTextMarkType("code") {
+				n.TextMarkTextContent = strings.ReplaceAll(n.TextMarkTextContent, "&quot;", "\"")
+			}
+		}
+		return ast.WalkContinue
+	})
+
 	luteEngine := NewLute()
 	formatRenderer := render.NewFormatRenderer(tree, luteEngine.RenderOptions)
 	md := formatRenderer.Render()
 	name = util.FilterFileName(name) + ".md"
 	name = util.TruncateLenFileName(name)
 	savePath := filepath.Join(util.DataDir, "templates", name)
-	if gulu.File.IsExist(savePath) {
+	if filelock.IsExist(savePath) {
 		if !overwrite {
 			code = 1
 			return

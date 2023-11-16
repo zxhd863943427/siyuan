@@ -1,4 +1,10 @@
 {
+  "freezeCol": "Geler la colonne",
+  "unfreezeCol": "Dégeler la colonne",
+  "snippetsTip": "L'extrait de code a été mis à jour, voulez-vous le sauvegarder ?",
+  "addBelowAbove": "Cliquez pour ajouter ci-dessous<br>⌥Cliquez pour ajouter ci-dessus",
+  "imported": "Importation terminée",
+  "mirrorTip": "Base de données miroir, toutes les mises à jour des données seront synchronisées avec tous les autres miroirs",
   "includeTime": "Inclure l'heure",
   "accountSupport1": "Depuis sa première version publique le 31 août 2020, SiYuan a été publié 481 fois au total, a répondu aux exigences et aux commentaires des utilisateurs 9 257 fois et a soumis du code 10 189 fois. Nous ne pouvons pas nous passer de votre soutien et de vos commentaires.",
   "accountSupport2": "Votre soutien et vos retours permettront à SiYuan de se développer et de mieux se développer. Nous serons toujours amis avec les utilisateurs, travaillerons dur pour améliorer les produits et vous offrirons une meilleure expérience de gestion des connaissances. Merci beaucoup pour votre soutient!",
@@ -13,6 +19,8 @@
   "goToTab9": "Aller au dernier onglet",
   "goToTabNext": "Aller à l'onglet suivant",
   "goToTabPrev": "Aller à l'onglet précédent",
+  "goToEditTabNext": "Aller à l'onglet modifié suivant",
+  "goToEditTabPrev": "Aller à l'onglet modifié précédent",
   "createdTime": "Heure de création",
   "updatedTime": "Heure mise à jour",
   "removeBookmark": "Supprimer le signet de ${x} ?",
@@ -171,6 +179,7 @@
   "searchTip5": "pour ignorer",
   "showRecentUpdatedBlocks": "Les blocs les plus récemment mis à jour seront affichés lorsque l'entrée est vide",
   "revisionCount": "Nombre de révisions",
+  "nextDue": "Revoir la prochaine fois",
   "flashcardNewCardLimit": "Nouvelle limite de carte",
   "flashcardNewCardLimitTip": "S'il y a beaucoup de nouvelles cartes, vous pouvez définir le nombre de nouvelles cartes à examiner via cet élément",
   "flashcardReviewCardLimit": "Revoir la limite de la carte",
@@ -1311,6 +1320,8 @@
     "214": "La fonctionnalité nécessite un numéro de compte de connexion avant de pouvoir être utilisée",
     "215": "Échec de l'enregistrement : le fichier de destination est utilisé par un autre programme",
     "216": "Reconstruction de l'index des données du contenu des ressources, veuillez patienter...",
-    "217": "[%d/%d] Création d'un index de données de contenu d'actif"
+    "217": "[%d/%d] Création d'un index de données de contenu d'actif",
+    "218": "Trop d'instantanés du référentiel de données ont été détectés, ce qui ralentit le démarrage du programme et la synchronisation des données. Veuillez envisager d'exécuter [Paramètres - À propos - Purge du référentiel de données]",
+    "219": "Le service de stockage cloud n'est pas disponible, veuillez réessayer plus tard"
   }
 }

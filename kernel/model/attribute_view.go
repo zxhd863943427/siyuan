@@ -27,6 +27,7 @@ import (
 	"github.com/88250/lute/ast"
 	"github.com/88250/lute/parse"
 	"github.com/Masterminds/sprig/v3"
+	"github.com/siyuan-note/filelock"
 	"github.com/siyuan-note/logging"
 	"github.com/siyuan-note/siyuan/kernel/av"
 	"github.com/siyuan-note/siyuan/kernel/treenode"
@@ -36,6 +37,7 @@ import (
 type BlockAttributeViewKeys struct {
 	AvID      string          `json:"avID"`
 	AvName    string          `json:"avName"`
+	BlockIDs  []string        `json:"blockIDs"`
 	KeyValues []*av.KeyValues `json:"keyValues"`
 }
 
@@ -140,9 +142,39 @@ func GetBlockAttributeViewKeys(blockID string) (ret []*BlockAttributeViewKeys) {
 			})
 		}
 
+		blockIDs := av.GetMirrorBlockIDs(avID)
+		if 1 > len(blockIDs) {
+			// 老数据兼容处理
+			avBts := treenode.GetBlockTreesByType("av")
+			for _, avBt := range avBts {
+				if nil == avBt {
+					continue
+				}
+				tree, _ := loadTreeByBlockID(avBt.ID)
+				if nil == tree {
+					continue
+				}
+				node := treenode.GetNodeInTree(tree, avBt.ID)
+				if nil == node {
+					continue
+				}
+				if avID == node.AttributeViewID {
+					blockIDs = append(blockIDs, avBt.ID)
+				}
+			}
+			if 1 > len(blockIDs) {
+				continue
+			}
+			blockIDs = gulu.Str.RemoveDuplicatedElem(blockIDs)
+			for _, blockID := range blockIDs {
+				av.UpsertBlockRel(avID, blockID)
+			}
+		}
+
 		ret = append(ret, &BlockAttributeViewKeys{
 			AvID:      avID,
 			AvName:    attrView.Name,
+			BlockIDs:  blockIDs,
 			KeyValues: keyValues,
 		})
 	}
@@ -152,7 +184,7 @@ func GetBlockAttributeViewKeys(blockID string) (ret []*BlockAttributeViewKeys) {
 func RenderAttributeView(avID string) (viewable av.Viewable, attrView *av.AttributeView, err error) {
 	waitForSyncingStorages()
 
-	if avJSONPath := av.GetAttributeViewDataPath(avID); !gulu.File.IsExist(avJSONPath) {
+	if avJSONPath := av.GetAttributeViewDataPath(avID); !filelock.IsExist(avJSONPath) {
 		attrView = av.NewAttributeView(avID)
 		if err = av.SaveAttributeView(attrView); nil != err {
 			logging.LogErrorf("save attribute view [%s] failed: %s", avID, err)
@@ -334,6 +366,7 @@ func renderAttributeViewTable(attrView *av.AttributeView, view *av.View) (ret *a
 			Wrap:         col.Wrap,
 			Hidden:       col.Hidden,
 			Width:        col.Width,
+			Pin:          col.Pin,
 			Calc:         col.Calc,
 		})
 	}
@@ -679,7 +712,10 @@ func addAttributeViewBlock(blockID string, operation *Operation, tree *parse.Tre
 			return
 		}
 	} else {
-		blockID = ast.NewNodeID()
+		if "" == blockID {
+			blockID = ast.NewNodeID()
+			logging.LogWarnf("detached block id is empty, generate a new one [%s]", blockID)
+		}
 	}
 
 	attrView, err := av.ParseAttributeView(operation.AvID)
@@ -906,6 +942,39 @@ func setAttributeViewColHidden(operation *Operation) (err error) {
 		for _, column := range view.Table.Columns {
 			if column.ID == operation.ID {
 				column.Hidden = operation.Data.(bool)
+				break
+			}
+		}
+	}
+
+	err = av.SaveAttributeView(attrView)
+	return
+}
+
+func (tx *Transaction) doSetAttrViewColumnPin(operation *Operation) (ret *TxErr) {
+	err := setAttributeViewColPin(operation)
+	if nil != err {
+		return &TxErr{code: TxErrWriteAttributeView, id: operation.AvID, msg: err.Error()}
+	}
+	return
+}
+
+func setAttributeViewColPin(operation *Operation) (err error) {
+	attrView, err := av.ParseAttributeView(operation.AvID)
+	if nil != err {
+		return
+	}
+
+	view, err := attrView.GetView()
+	if nil != err {
+		return
+	}
+
+	switch view.LayoutType {
+	case av.LayoutTypeTable:
+		for _, column := range view.Table.Columns {
+			if column.ID == operation.ID {
+				column.Pin = operation.Data.(bool)
 				break
 			}
 		}

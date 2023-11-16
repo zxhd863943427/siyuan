@@ -53,6 +53,21 @@ type BlockTree struct {
 	Type     string // 类型
 }
 
+func GetBlockTreesByType(typ string) (ret []*BlockTree) {
+	blockTrees.Range(func(key, value interface{}) bool {
+		slice := value.(*btSlice)
+		slice.m.Lock()
+		for _, b := range slice.data {
+			if b.Type == typ {
+				ret = append(ret, b)
+			}
+		}
+		slice.m.Unlock()
+		return true
+	})
+	return
+}
+
 func GetBlockTreeByPath(path string) (ret *BlockTree) {
 	blockTrees.Range(func(key, value interface{}) bool {
 		slice := value.(*btSlice)
@@ -124,6 +139,22 @@ func GetBlockTreeRootByHPath(boxID, hPath string) (ret *BlockTree) {
 		}
 		slice.m.Unlock()
 		return nil == ret
+	})
+	return
+}
+
+func GetBlockTreeRootsByHPath(boxID, hPath string) (ret []*BlockTree) {
+	hPath = gulu.Str.RemoveInvisible(hPath)
+	blockTrees.Range(func(key, value interface{}) bool {
+		slice := value.(*btSlice)
+		slice.m.Lock()
+		for _, b := range slice.data {
+			if b.BoxID == boxID && b.HPath == hPath && b.RootID == b.ID {
+				ret = append(ret, b)
+			}
+		}
+		slice.m.Unlock()
+		return true
 	})
 	return
 }

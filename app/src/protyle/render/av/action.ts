@@ -3,7 +3,7 @@ import {hasClosestBlock, hasClosestByAttribute, hasClosestByClassName} from "../
 import {transaction} from "../../wysiwyg/transaction";
 import {openEditorTab} from "../../../menus/util";
 import {copySubMenu} from "../../../menus/commonMenuItem";
-import {openCalcMenu, popTextCell} from "./cell";
+import {getTypeByCellElement, openCalcMenu, popTextCell} from "./cell";
 import {getColIconByType, showColMenu} from "./col";
 import {insertAttrViewBlockAnimation, updateHeader} from "./row";
 import {emitOpenMenu} from "../../../plugin/EventBus";
@@ -39,7 +39,12 @@ export const avClick = (protyle: IProtyle, event: MouseEvent & { target: HTMLEle
 
     const copyElement = hasClosestByAttribute(event.target, "data-type", "copy");
     if (copyElement) {
-        writeText(copyElement.previousElementSibling.textContent.trim());
+        const textElement = copyElement.previousElementSibling;
+        if (textElement.querySelector(".av__cellicon")) {
+            writeText(`${textElement.firstChild.textContent} → ${textElement.lastChild.textContent}`);
+        } else {
+            writeText(textElement.textContent);
+        }
         showMessage(window.siyuan.languages.copied);
         event.preventDefault();
         event.stopPropagation();
@@ -63,15 +68,37 @@ export const avClick = (protyle: IProtyle, event: MouseEvent & { target: HTMLEle
         return true;
     }
 
-    const gutterElement = hasClosestByClassName(event.target, "av__gutters");
-    if (gutterElement) {
-        const gutterRect = gutterElement.getBoundingClientRect();
-        avContextmenu(protyle, gutterElement.parentElement, {
-            x: gutterRect.left,
-            y: gutterRect.bottom,
-            w: gutterRect.width,
-            h: gutterRect.height
-        });
+    const gutterElement = hasClosestByClassName(event.target, "ariaLabel");
+    if (gutterElement && gutterElement.parentElement.classList.contains("av__gutters")) {
+        const rowElement = hasClosestByClassName(gutterElement, "av__row");
+        if (!rowElement) {
+            return;
+        }
+        if (gutterElement.dataset.action === "add") {
+            const avID = blockElement.getAttribute("data-av-id");
+            const srcIDs = [Lute.NewNodeID()];
+            const previousID = event.altKey ? (rowElement.previousElementSibling.getAttribute("data-id") || "") : rowElement.getAttribute("data-id");
+            transaction(protyle, [{
+                action: "insertAttrViewBlock",
+                avID,
+                previousID,
+                srcIDs,
+                isDetached: true,
+            }], [{
+                action: "removeAttrViewBlock",
+                srcIDs,
+                avID,
+            }]);
+            insertAttrViewBlockAnimation(blockElement, 1, previousID, avID);
+        } else {
+            const gutterRect = gutterElement.getBoundingClientRect();
+            avContextmenu(protyle, rowElement, {
+                x: gutterRect.left,
+                y: gutterRect.bottom,
+                w: gutterRect.width,
+                h: gutterRect.height
+            });
+        }
         event.preventDefault();
         event.stopPropagation();
         return true;
@@ -176,16 +203,24 @@ export const avClick = (protyle: IProtyle, event: MouseEvent & { target: HTMLEle
     }
 
     const cellElement = hasClosestByClassName(event.target, "av__cell");
-    if (cellElement && !cellElement.parentElement.classList.contains("av__row--header")) {
-        const type = cellElement.parentElement.parentElement.firstElementChild.querySelector(`[data-col-id="${cellElement.getAttribute("data-col-id")}"]`).getAttribute("data-dtype") as TAVCol;
+    if (cellElement && !hasClosestByClassName(cellElement, "av__row--header")) {
+        const scrollElement = hasClosestByClassName(cellElement, "av__scroll");
+        if (!scrollElement) {
+            return;
+        }
+        const rowElement = hasClosestByClassName(cellElement, "av__row");
+        if (!rowElement) {
+            return;
+        }
+        const type = getTypeByCellElement(cellElement);
         if (type === "updated" || type === "created" || (type === "block" && !cellElement.getAttribute("data-detached"))) {
-            selectRow(cellElement.parentElement.querySelector(".av__firstcol"), "toggle");
+            selectRow(rowElement.querySelector(".av__firstcol"), "toggle");
         } else {
-            cellElement.parentElement.parentElement.querySelectorAll(".av__row--select").forEach(item => {
+            scrollElement.querySelectorAll(".av__row--select").forEach(item => {
                 item.querySelector(".av__firstcol use").setAttribute("xlink:href", "#iconUncheck");
                 item.classList.remove("av__row--select");
             });
-            updateHeader(cellElement.parentElement);
+            updateHeader(rowElement);
             popTextCell(protyle, [cellElement]);
         }
         event.preventDefault();
@@ -218,7 +253,6 @@ export const avClick = (protyle: IProtyle, event: MouseEvent & { target: HTMLEle
             avID,
         }]);
         insertAttrViewBlockAnimation(blockElement, 1, previousID, avID);
-        popTextCell(protyle, [addRowElement.previousElementSibling.querySelector('[data-detached="true"]')], "block");
         event.preventDefault();
         event.stopPropagation();
         return true;
@@ -284,7 +318,7 @@ export const avContextmenu = (protyle: IProtyle, rowElement: HTMLElement, positi
             updateHeader(blockElement.querySelector(".av__row"));
         }
     });
-    if (rowIds.length === 1) {
+    if (rowIds.length === 1 && !rowElements[0].querySelector('[data-detached="true"]')) {
         menu.addSeparator();
         openEditorTab(protyle.app, rowIds[0]);
         menu.addItem({
@@ -370,11 +404,24 @@ export const updateAVName = (protyle: IProtyle, blockElement: Element) => {
     blockElement.setAttribute("updated", newUpdated);
     nameElement.dataset.title = newData;
     blockElement.querySelector(".layout-tab-bar .item__text").textContent = newData;
+
+    // 当前页面不能进行推送，否则光标会乱跳
+    Array.from(protyle.wysiwyg.element.querySelectorAll(`[data-av-id="${avId}"]`)).forEach((item: HTMLElement) => {
+        if (blockElement.isSameNode(item)) {
+            return;
+        }
+        const titleElement = item.querySelector(".av__title") as HTMLElement;
+        if (!titleElement) {
+            return;
+        }
+        titleElement.textContent = newData;
+        titleElement.dataset.title = newData;
+        item.querySelector(".layout-tab-bar .item__text").textContent = newData;
+    });
 };
 
 export const updateAttrViewCellAnimation = (cellElement: HTMLElement) => {
-    cellElement.style.opacity = "0.38";
-    cellElement.style.backgroundColor = "var(--b3-theme-surface-light)";
+    cellElement.style.backgroundColor = "var(--b3-av-hover)";
 };
 
 export const removeAttrViewColAnimation = (blockElement: Element, id: string) => {

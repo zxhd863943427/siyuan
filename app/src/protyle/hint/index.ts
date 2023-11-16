@@ -16,7 +16,7 @@ import {getContenteditableElement, hasNextSibling, hasPreviousSibling} from "../
 import {transaction, updateTransaction} from "../wysiwyg/transaction";
 import {insertHTML} from "../util/insertHTML";
 import {highlightRender} from "../render/highlightRender";
-import {imgMenu} from "../../menus/protyle";
+import {assetMenu, imgMenu} from "../../menus/protyle";
 import {hideElements} from "../ui/hideElements";
 import {fetchPost} from "../../util/fetch";
 import {getDisplayName, pathPosix} from "../../util/pathName";
@@ -30,7 +30,7 @@ import {openMobileFileById} from "../../mobile/editor";
 import {processRender} from "../util/processCode";
 import {AIChat} from "../../ai/chat";
 import {isMobile} from "../../util/functions";
-import {isCtrl, isIPhone} from "../util/compatibility";
+import {isIPhone, isNotCtrl, isOnlyMeta} from "../util/compatibility";
 import {avRender} from "../render/av/render";
 import {genIconHTML} from "../render/util";
 
@@ -59,10 +59,10 @@ export class Hint {
             const btnElement = hasClosestByMatchTag(eventTarget, "BUTTON");
             if (btnElement && !btnElement.classList.contains("emojis__item") && !btnElement.classList.contains("emojis__type")) {
                 if (this.source !== "search") {
-                    this.fill(decodeURIComponent(btnElement.getAttribute("data-value")), protyle, true, isCtrl(event));
+                    this.fill(decodeURIComponent(btnElement.getAttribute("data-value")), protyle, true, isOnlyMeta(event));
                 } else {
                     setTimeout(() => {
-                        this.fill(decodeURIComponent(btnElement.getAttribute("data-value")), protyle, true, !isCtrl(event));
+                        this.fill(decodeURIComponent(btnElement.getAttribute("data-value")), protyle, true, isNotCtrl(event));
                     }, 148);    // 划选引用点击，需先重置 range
                 }
                 focusByRange(protyle.toolbar.range);
@@ -302,7 +302,7 @@ ${unicode2Emoji(emoji.unicode)}</button>`;
                 upDownHint(this.element.lastElementChild, event);
                 if (event.key === "Enter") {
                     setTimeout(() => {
-                        this.fill(decodeURIComponent(this.element.querySelector(".b3-list-item--focus").getAttribute("data-value")), protyle, true, !isCtrl(event));
+                        this.fill(decodeURIComponent(this.element.querySelector(".b3-list-item--focus").getAttribute("data-value")), protyle, true, isNotCtrl(event));
                     }, 148);    // 划选引用点击，需先重置 range
                     focusByRange(protyle.toolbar.range);
                     event.preventDefault();
@@ -608,7 +608,7 @@ ${genHintItemHTML(item)}
                 this.fixImageCursor(range);
                 protyle.toolbar.range = range;
                 const rangePosition = getSelectionPosition(nodeElement, range);
-                protyle.toolbar.showAssets(protyle, {x: rangePosition.left, y: rangePosition.top + 26, w: 0, h: 26});
+                assetMenu(protyle, {x: rangePosition.left, y: rangePosition.top + 26, w: 0, h: 26});
                 updateTransaction(protyle, id, nodeElement.outerHTML, html);
                 return;
             } else if (value === Constants.ZWSP + 3) {
@@ -826,7 +826,7 @@ ${genHintItemHTML(item)}
                 if (mark === Constants.ZWSP + 3) {
                     (this.element.querySelector(".b3-list-item--focus input") as HTMLElement).click();
                 } else {
-                    this.fill(mark, protyle, true, isCtrl(event));
+                    this.fill(mark, protyle, true, isOnlyMeta(event));
                 }
             }
             event.preventDefault();
