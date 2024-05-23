@@ -94,5 +94,8 @@ module.exports = (env, argv) => {
                 filename: "base.css",
             }),
         ],
+        experiments:{
+            topLevelAwait: true
+        },
     };
 };

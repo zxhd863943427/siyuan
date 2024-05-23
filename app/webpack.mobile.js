@@ -121,5 +121,8 @@ module.exports = (env, argv) => {
                 template: "src/assets/template/mobile/index.tpl",
             }),
         ],
+        experiments:{
+            topLevelAwait: true
+        },
     };
 };

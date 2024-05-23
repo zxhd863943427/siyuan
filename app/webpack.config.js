@@ -96,9 +96,6 @@ module.exports = (env, argv) => {
                 },
             ],
         },
-        experiments:{
-            topLevelAwait: true
-        },
         plugins: [
             new CleanWebpackPlugin({
                 cleanStaleWebpackAssets: false,
@@ -125,5 +122,8 @@ module.exports = (env, argv) => {
                 template: "src/assets/template/app/window.tpl",
             }),
         ],
+        experiments:{
+            topLevelAwait: true
+        },
     };
 };

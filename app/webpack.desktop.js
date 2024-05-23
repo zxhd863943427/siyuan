@@ -120,5 +120,8 @@ module.exports = (env, argv) => {
                 template: "src/assets/template/desktop/index.tpl",
             }),
         ],
+        experiments:{
+            topLevelAwait: true
+        },
     };
 };
