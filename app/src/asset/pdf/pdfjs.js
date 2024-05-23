@@ -16,7 +16,23 @@
 
 "use strict";
 
-const {addScriptSync} = require('../../protyle/util/addScript')
+const {addScriptSync,addECMAScript,addECMAScriptSync,addECMAScriptLink} = require('../../protyle/util/addScript')
 const {Constants} = require('../../constants')
-addScriptSync(`${Constants.PROTYLE_CDN}/js/pdf/pdf.js?v=3.5.141`, 'pdfjsScript')
-module.exports = window["pdfjs-dist/build/pdf"];
+// // addScriptSync(`${Constants.PROTYLE_CDN}/js/pdf/pdf.js?v=3.5.141`, 'pdfjsScript')
+// addECMAScript(`${Constants.PROTYLE_CDN}/js/pdf/pdf.mjs`, 'pdfjsScriptECMA')
+// // console.log("nosync")
+// addECMAScriptSync(`${Constants.PROTYLE_CDN}/js/pdf/pdf.mjs`, 'pdfjsScriptECMASync')
+// // console.log("sync")
+// addECMAScriptLink(`${Constants.PROTYLE_CDN}/js/pdf/pdf.mjs`, 'pdfjsScriptECMALink')
+// console.log('link')
+// // module.exports = window['pdfjsLib'];
+let pdfjsLib = {};
+import(`/stage/protyle/js/pdf/pdf.mjs`).then(pdfjsLibImport=>{
+    for (const key in pdfjsLibImport){
+        pdfjsLib[key] = pdfjsLibImport[key]
+    }
+})
+pdfjsLib['createPromiseCapability']= function createPromiseCapability(){
+    return Promise.withResolvers()
+}
+module.exports = pdfjsLib
