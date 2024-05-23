@@ -96,6 +96,9 @@ module.exports = (env, argv) => {
                 },
             ],
         },
+        experiments:{
+            topLevelAwait: true
+        },
         plugins: [
             new CleanWebpackPlugin({
                 cleanStaleWebpackAssets: false,
