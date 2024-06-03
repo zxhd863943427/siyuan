@@ -53,7 +53,8 @@ const annoColor:{[key: string]: string} = {
 }
 
 export async function getInitAnnotations(path:string) :Promise<any[]>{
-    let urlPath = path.replace(location.origin, "").substr(1) + ".sya";
+    let fileName = path.replace(location.origin, "").substr(1)
+    let urlPath = fileName + ".sya";
     let originAnnoData:any[] = [];
     let annoData:any[] = [];
     let annoResponse = await fetchSyncPost(
@@ -66,6 +67,10 @@ export async function getInitAnnotations(path:string) :Promise<any[]>{
         originAnnoData = JSON.parse(annoResponse.data.data);
         Object.entries(originAnnoData).forEach(([key, value]) => {
             if (key == "zotero"){
+                debugger;
+                // value.forEach(async (anno: Annotation)=>{
+                //     console.log(1111)
+                // })
                 annoData.push(...value)
             }
             switch(value.mode){
@@ -85,15 +90,17 @@ export async function getInitAnnotations(path:string) :Promise<any[]>{
 
 export async function SaveAnnotations(reader:any,idMap:{[key: string]: string}) {
     let path = reader._data.fileName + ".sya";
-     reader._annotationManager._annotations.forEach((anno:Annotation)=>{
+    let save_anntations = reader._annotationManager._annotations.map((anno:Annotation)=>{
         if (anno.id.length < 10 ){
             anno.id = idMap[anno.id]? idMap[anno.id]:Lute.NewNodeID()
         }
+        let image = "";
+        return {...anno,image}
     })
     await fetchSyncPost("/api/asset/setFileAnnotation", {
         path: path,
         data: JSON.stringify({
-            "zotero":reader._annotationManager._annotations
+            "zotero":save_anntations
         }),
     });
 }
