@@ -67,10 +67,27 @@ export async function getInitAnnotations(path:string) :Promise<any[]>{
         originAnnoData = JSON.parse(annoResponse.data.data);
         Object.entries(originAnnoData).forEach(([key, value]) => {
             if (key == "zotero"){
-                debugger;
-                // value.forEach(async (anno: Annotation)=>{
-                //     console.log(1111)
-                // })
+                setTimeout(()=>{
+                    value.forEach(async (anno: Annotation)=>{
+                        if ((typeof (anno as ImageAnnotation).image)!= "undefined"){
+                            fetch(`${fileName}-${anno.id}.png`)
+                            .then(response => response.blob())
+                            .then(blob => new Promise((resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => resolve(reader.result);
+                                reader.onerror = reject;
+                                reader.readAsDataURL(blob);
+                            }))
+                            .then((base64:string) => {
+                                (anno as ImageAnnotation).image = base64; // 这里是你的Base64编码数据
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                            });
+                        }
+                    })
+                },1000)
+
                 annoData.push(...value)
             }
             switch(value.mode){
@@ -94,8 +111,15 @@ export async function SaveAnnotations(reader:any,idMap:{[key: string]: string}) 
         if (anno.id.length < 10 ){
             anno.id = idMap[anno.id]? idMap[anno.id]:Lute.NewNodeID()
         }
-        let image = "";
-        return {...anno,image}
+        // return anno
+        if ((anno as ImageAnnotation).image){
+            let image = "";
+            return {...anno,image}
+        }
+        else{
+            let image:undefined = undefined;
+            return {...anno,image}
+        }
     })
     await fetchSyncPost("/api/asset/setFileAnnotation", {
         path: path,
@@ -141,6 +165,9 @@ export function genDataTransferAnnotations(fileName:string){
 }
 
 export function saveAnnotationsImage(fileName:string,annotations:Annotation[]){
+    if (annotations.length > 10){
+        return
+    }
     annotations.forEach(async (annotation)=>{
         if (!(annotation as ImageAnnotation).image){
             return
