@@ -160,7 +160,7 @@ export function genDataTransferAnnotations(fileName:string){
 
         let plantText = genClipPlantText(annotations,fileName,fromText)
         dataTransfer.setData('text/plain', plantText || ' ');
-        dataTransfer.setData('text/html', luteEngine.Md2BlockDOM(plantText) || ' ');
+        dataTransfer.setData('text/html', (luteEngine as any).Md2HTML(plantText) || ' ');
     }
 }
 
