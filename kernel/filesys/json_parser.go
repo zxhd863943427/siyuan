@@ -56,7 +56,6 @@ func ParseJSON(jsonData []byte, options *parse.Options) (ret *parse.Tree, needFi
 		return
 	}
 
-	// 如果是空文档的话挂一个空段落上去
 	ret, needFix, err = ASTNode2Tree(root, options)
 	return
 }
