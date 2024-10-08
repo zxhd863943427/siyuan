@@ -207,7 +207,12 @@ func parseJSON2Tree(boxID, p string, jsonData []byte, luteEngine *lute.Lute) (re
 
 	ret.Box = boxID
 	ret.Path = p
+	migrateAndSaveTree(ret, needFix, luteEngine)
+	return
+}
 
+func migrateAndSaveTree(ret *parse.Tree, needFix bool, luteEngine *lute.Lute) {
+	var err error
 	filePath := filepath.Join(util.DataDir, ret.Box, ret.Path)
 	if oldSpec := ret.Root.Spec; "" == oldSpec {
 		parse.NestedInlines2FlattedSpans(ret, false)
