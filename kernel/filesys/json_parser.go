@@ -56,6 +56,12 @@ func ParseJSON(jsonData []byte, options *parse.Options) (ret *parse.Tree, needFi
 		return
 	}
 
+	// 如果是空文档的话挂一个空段落上去
+	ret, needFix, err = ASTNode2Tree(root, options)
+	return
+}
+
+func ASTNode2Tree(root *ast.Node, options *parse.Options) (ret *parse.Tree, needFix bool, err error) {
 	ret = &parse.Tree{Name: "", ID: root.ID, Root: &ast.Node{Type: ast.NodeDocument, ID: root.ID, Spec: root.Spec}, Context: &parse.Context{ParseOption: options}}
 	ret.Root.KramdownIAL = parse.Map2IAL(root.Properties)
 	ret.Root.SetIALAttr("type", "doc")

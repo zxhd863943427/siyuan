@@ -74,6 +74,12 @@ func LoadTreeByData(data []byte, boxID, p string, luteEngine *lute.Lute) (ret *p
 		err = errors.New("parse tree failed")
 		return
 	}
+
+	buildTreeHPathAndHash(ret, p, luteEngine, boxID)
+	return
+}
+
+func buildTreeHPathAndHash(ret *parse.Tree, p string, luteEngine *lute.Lute, boxID string) {
 	ret.Path = p
 	ret.Root.Path = p
 
@@ -130,7 +136,6 @@ func LoadTreeByData(data []byte, boxID, p string, luteEngine *lute.Lute) (ret *p
 	hPathBuilder.WriteString(ret.Root.IALAttr("title"))
 	ret.HPath = hPathBuilder.String()
 	ret.Hash = treenode.NodeHash(ret.Root, ret, luteEngine)
-	return
 }
 
 func WriteTree(tree *parse.Tree) (size uint64, err error) {
