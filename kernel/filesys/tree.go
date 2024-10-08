@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/88250/lute"
+	"github.com/88250/lute/ast"
 	"github.com/88250/lute/parse"
 	"github.com/88250/lute/render"
 	jsoniter "github.com/json-iterator/go"
@@ -56,6 +57,10 @@ func LoadTrees(ids []string) (ret map[string]*parse.Tree) {
 }
 
 func LoadTree(boxID, p string, luteEngine *lute.Lute) (ret *parse.Tree, err error) {
+
+	var needFix bool
+	root := &ast.Node{}
+
 	filePath := filepath.Join(util.DataDir, boxID, p)
 	data, err := filelock.ReadFile(filePath)
 	if err != nil {
@@ -63,7 +68,28 @@ func LoadTree(boxID, p string, luteEngine *lute.Lute) (ret *parse.Tree, err erro
 		return
 	}
 
-	ret, err = LoadTreeByData(data, boxID, p, luteEngine)
+	err = unmarshalJSON(data, root)
+	if err != nil {
+		return
+	}
+
+	ret, needFix, err = ASTNode2Tree(root, luteEngine.ParseOptions)
+
+	if err != nil {
+		logging.LogErrorf("parse json [%s] to tree failed: %s", boxID+p, err)
+		return
+	}
+	if nil == ret {
+		logging.LogErrorf("parse tree [%s] failed", p)
+		err = errors.New("parse tree failed")
+		return
+	}
+
+	ret.Box = boxID
+	ret.Path = p
+	migrateAndSaveTree(ret, needFix, luteEngine)
+
+	buildTreeHPathAndHash(ret, p, luteEngine, boxID)
 	return
 }
 
