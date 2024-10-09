@@ -29,6 +29,8 @@ import (
 	"github.com/88250/lute/ast"
 	"github.com/88250/lute/parse"
 	"github.com/88250/lute/render"
+	"github.com/dgraph-io/ristretto"
+	"github.com/jinzhu/copier"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/siyuan-note/filelock"
 	"github.com/siyuan-note/logging"
@@ -36,6 +38,49 @@ import (
 	"github.com/siyuan-note/siyuan/kernel/treenode"
 	"github.com/siyuan-note/siyuan/kernel/util"
 )
+
+var treeCache, _ = ristretto.NewCache(&ristretto.Config[string, *parse.Tree]{
+	NumCounters: 1024 * 100,
+	MaxCost:     1024 * 1024 * 200,
+	BufferItems: 64,
+})
+
+func putTree(path string, tree *parse.Tree) {
+	cloned := &parse.Tree{}
+	if err := copier.Copy(cloned, tree); err != nil {
+		logging.LogErrorf("clone tree failed: %v", err)
+		return
+	}
+	cloned.Root = tree.Root
+	treeCache.Set(path, cloned, 128)
+}
+
+func getTree(path string) (ret *parse.Tree) {
+	cloned := &parse.Tree{}
+	tree, _ := treeCache.Get(path)
+	if tree != nil {
+		if err := copier.Copy(cloned, tree); err != nil {
+			logging.LogErrorf("clone tree failed: %v", err)
+			return
+		}
+		cloned.Root = tree.Root
+		ret = cloned
+	}
+	return
+}
+
+func DelTree(path string) {
+	treeCache.Del(path)
+}
+
+func CheckTreeAST(tree *parse.Tree) []string {
+	n := tree.Root
+	ret := []string{}
+	for c := n.FirstChild; nil != c; c = c.Next {
+		ret = append(ret, c.ID)
+	}
+	return ret
+}
 
 func LoadTrees(ids []string) (ret map[string]*parse.Tree) {
 	ret, tmpCache := map[string]*parse.Tree{}, map[string]*parse.Tree{}
@@ -57,7 +102,11 @@ func LoadTrees(ids []string) (ret map[string]*parse.Tree) {
 }
 
 func LoadTree(boxID, p string, luteEngine *lute.Lute) (ret *parse.Tree, err error) {
-
+	cacheTree := getTree(p)
+	if cacheTree != nil {
+		ret = cacheTree
+		return
+	}
 	var needFix bool
 	root := &ast.Node{}
 
@@ -90,6 +139,7 @@ func LoadTree(boxID, p string, luteEngine *lute.Lute) (ret *parse.Tree, err erro
 	migrateAndSaveTree(ret, needFix, luteEngine)
 
 	buildTreeHPathAndHash(ret, p, luteEngine, boxID)
+	putTree(p, ret)
 	return
 }
 

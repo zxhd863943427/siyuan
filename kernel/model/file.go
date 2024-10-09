@@ -885,8 +885,8 @@ func GetDoc(startID, endID, id string, index int, query string, queryTypes map[s
 		for _, unlink := range unlinks {
 			unlink.Unlink()
 		}
-
-		subTree.Root.AppendChild(n)
+		n_clone := n.CloneList()
+		subTree.Root.AppendChild(n_clone)
 	}
 
 	luteEngine.RenderOptions.NodeIndexStart = index
