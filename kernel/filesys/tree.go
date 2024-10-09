@@ -270,6 +270,7 @@ func prepareWriteTree(tree *parse.Tree) (data []byte, filePath string, err error
 func afterWriteTree(tree *parse.Tree) {
 	docIAL := parse.IAL2MapUnEsc(tree.Root.KramdownIAL)
 	cache.PutDocIAL(tree.Path, docIAL)
+	putTree(tree.Path, tree)
 }
 
 func parseJSON2Tree(boxID, p string, jsonData []byte, luteEngine *lute.Lute) (ret *parse.Tree) {
