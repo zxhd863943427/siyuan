@@ -90,6 +90,11 @@ func initDBTables() {
 	if err != nil {
 		logging.LogFatalf(logging.ExitCodeReadOnlyDatabase, "create index [idx_blocktrees_id] failed: %s", err)
 	}
+
+	_, err = db.Exec("CREATE INDEX idx_blocktrees_root_id ON blocktrees(root_id)")
+	if err != nil {
+		logging.LogFatalf(logging.ExitCodeReadOnlyDatabase, "create index [idx_blocktrees_root_id] failed: %s", err)
+	}
 }
 
 func initDBConnection() {
@@ -432,6 +437,44 @@ func GetBlockTreesByRootID(rootID string) (ret []*BlockTree) {
 	return
 }
 
+func getLittleBlockTreesByRootID(rootID string) (ret []*BlockTree) {
+	sqlStmt := "SELECT id, updated, type FROM blocktrees WHERE root_id = ?"
+	rows, err := db.Query(sqlStmt, rootID)
+	if err != nil {
+		logging.LogErrorf("sql query [%s] failed: %s", sqlStmt, err)
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var block BlockTree
+		if err = rows.Scan(&block.ID, &block.Updated, &block.Type); err != nil {
+			logging.LogErrorf("query scan field failed: %s", err)
+			return
+		}
+		ret = append(ret, &block)
+	}
+	return
+}
+
+func getBlockTreesByTreeUpdate(tree *parse.Tree) (ret []*BlockTree) {
+	sqlStmt := "SELECT * FROM blocktrees WHERE root_id = ? AND (box_id != ? OR path != ? OR hpath != ?)"
+	rows, err := db.Query(sqlStmt, tree.ID, tree.Box, tree.Path, tree.HPath)
+	if err != nil {
+		logging.LogErrorf("sql query [%s] failed: %s", sqlStmt, err)
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var block BlockTree
+		if err = rows.Scan(&block.ID, &block.RootID, &block.ParentID, &block.BoxID, &block.Path, &block.HPath, &block.Updated, &block.Type); err != nil {
+			logging.LogErrorf("query scan field failed: %s", err)
+			return
+		}
+		ret = append(ret, &block)
+	}
+	return
+}
+
 func RemoveBlockTreesByPathPrefix(pathPrefix string) {
 	sqlStmt := "DELETE FROM blocktrees WHERE path LIKE ?"
 	_, err := db.Exec(sqlStmt, pathPrefix+"%")
@@ -535,21 +578,32 @@ func IndexBlockTree(tree *parse.Tree) {
 }
 
 func UpsertBlockTree(tree *parse.Tree) {
-	oldBts := map[string]*BlockTree{}
-	bts := GetBlockTreesByRootID(tree.ID)
-	for _, bt := range bts {
-		oldBts[bt.ID] = bt
+	oldLittleBts := map[string]*BlockTree{}
+	oldtreeUpdateBts := map[string]*BlockTree{}
+	treeUpdateBts := getBlockTreesByTreeUpdate(tree)
+	littleBts := getLittleBlockTreesByRootID(tree.ID)
+	for _, bt := range littleBts {
+		oldLittleBts[bt.ID] = bt
+	}
+
+	for _, bt := range treeUpdateBts {
+		oldtreeUpdateBts[bt.ID] = bt
 	}
 
 	var changedNodes []*ast.Node
+
 	ast.Walk(tree.Root, func(n *ast.Node, entering bool) ast.WalkStatus {
 		if !entering || !n.IsBlock() || "" == n.ID {
 			return ast.WalkContinue
 		}
 
-		if oldBt, found := oldBts[n.ID]; found {
-			if oldBt.Updated != n.IALAttr("updated") || oldBt.Type != TypeAbbr(n.Type.String()) || oldBt.Path != tree.Path || oldBt.BoxID != tree.Box || oldBt.HPath != tree.HPath {
-				children := ChildBlockNodes(n) // 需要考虑子块，因为一些操作（比如移动块）后需要同时更新子块
+		if _, found := oldtreeUpdateBts[n.ID]; found {
+			children := ChildBlockNodes(n) // 需要考虑子块，因为一些操作（比如移动块）后需要同时更新子块
+			changedNodes = append(changedNodes, children...)
+
+		} else if oldBt, found := oldLittleBts[n.ID]; found {
+			if oldBt.Updated != n.IALAttr("updated") || oldBt.Type != TypeAbbr(n.Type.String()) {
+				children := ChildBlockNodes(n)
 				changedNodes = append(changedNodes, children...)
 			}
 		} else {
