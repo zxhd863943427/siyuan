@@ -805,7 +805,8 @@ func GetDoc(startID, endID, id string, index int, query string, queryTypes map[s
 	}
 
 	refCount := sql.QueryRootChildrenRefCount(rootID)
-	virtualBlockRefKeywords := getBlockVirtualRefKeywords(tree.Root)
+	// virtualBlockRefKeywords := getBlockVirtualRefKeywords(tree.Root)
+	virtualBlockRefKeywords := []string{}
 
 	subTree := &parse.Tree{ID: rootID, Root: &ast.Node{Type: ast.NodeDocument}, Marks: tree.Marks}
 

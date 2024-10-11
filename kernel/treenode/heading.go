@@ -58,6 +58,7 @@ func MoveFoldHeading(updateNode, oldNode *ast.Node) {
 }
 
 func IsInFoldedHeading(node, currentHeading *ast.Node) bool {
+	return false
 	if nil == node {
 		return false
 	}
