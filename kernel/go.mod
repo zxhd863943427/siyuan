@@ -166,7 +166,7 @@ require (
 	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/tools v0.25.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
@@ -184,3 +184,5 @@ replace github.com/mattn/go-sqlite3 => github.com/88250/go-sqlite3 v1.14.13-0.20
 //replace github.com/mattn/go-sqlite3 => D:\88250\go-sqlite3
 //replace github.com/88250/epub => D:\88250\epub
 //replace github.com/siyuan-note/logging => D:\88250\logging
+
+replace github.com/88250/lute => github.com/zxhd863943427/lute v0.0.0-20241011021608-94e59535ae6b
